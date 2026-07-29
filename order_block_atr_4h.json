@@ -1,0 +1,80 @@
+{
+  "survived": false,
+  "barriers_passed": 1,
+  "robustness": 0.4173377728273586,
+  "failed": [
+    "1. Out-of-sample",
+    "6. Стабильность параметров",
+    "3. Кросс-инструмент",
+    "2. Walk-forward",
+    "5. Поправка на multiple testing",
+    "7. Реалистичные издержки"
+  ],
+  "notes": {
+    "1. Out-of-sample": "train exp=-0.051R sharpe=-0.042 n=65 -> test exp=+0.276R PF=1.63 sharpe=+0.231 n=25 (сохранение эджа 100%)",
+    "6. Стабильность параметров": "центр exp=-0.051R, медиана соседей=-0.119R (0% от центра), в плюсе 0% из 3 соседей",
+    "3. Кросс-инструмент": "в плюсе 1/4 инструментов с выборкой (всего пригодных 5/5); DOGEUSDT: exp=+0.009R n=92",
+    "4. Минимум сделок": "всего 433 сделок; инструментов с достаточной выборкой 5/5",
+    "2. Walk-forward": "2/6 окон в плюсе (33%), суммарно OOS exp=-0.099R n=62",
+    "5. Поправка на multiple testing": "DSR=0.673 (нужно >= 0.95) при 2747 пробах; SR=+0.231 против планки случайного максимума +0.137; нужно сделок для значимости: 323, есть 25",
+    "7. Реалистичные издержки": "round-trip 30 bps, издержки съедают 1588% валовой; медиана стопа = 3.11 ATR; при x2 издержках exp=-0.102R (было -0.048R)"
+  },
+  "best_config": {
+    "name": "order_block_atr_stop|ob_max_age=40,rr=1.5,mult=3.0",
+    "entry": {
+      "type": "order_block",
+      "params": {
+        "swing_left": 3,
+        "swing_right": 3,
+        "ob_max_age": 40,
+        "stop_buffer": 0.0005
+      }
+    },
+    "stop": {
+      "type": "atr",
+      "params": {
+        "period": 14,
+        "mult": 3.0
+      }
+    },
+    "exit": {
+      "type": "fixed_rr",
+      "params": {
+        "rr": 1.5,
+        "max_bars": 120
+      }
+    },
+    "direction": "both",
+    "timeframe": "4h",
+    "filters": [],
+    "sizing": {
+      "risk_pct": 0.01,
+      "max_leverage": 100.0
+    },
+    "costs": {
+      "fee_bps_per_side": 6.0,
+      "slip_bps_per_side": 9.0,
+      "funding_default_8h": 0.0001
+    },
+    "meta": {
+      "source": "OB трейдера, стоп заменён на ATR (диагноз по издержкам)"
+    }
+  },
+  "metrics": {
+    "n_trades": 433,
+    "winrate": 0.40877598152424943,
+    "profit_factor": 0.9206668086477933,
+    "expectancy_R": -0.04750317327229421,
+    "std_R": 1.1849663949681426,
+    "sharpe_trade": -0.04008820290095342,
+    "total_R": -20.568874026903394,
+    "max_dd_R": 44.47586479496978,
+    "skew": 0.39125715776758674,
+    "kurtosis": 1.2223491494001029,
+    "max_loss_streak": 13,
+    "avg_win_R": 1.3486051487796848,
+    "avg_loss_R": -1.0127811928160455
+  },
+  "flags": [],
+  "trials_total": 2747
+}

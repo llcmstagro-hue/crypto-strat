@@ -1,0 +1,349 @@
+{
+  "tf": "4h",
+  "primary": [
+    "BTCUSDT"
+  ],
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "BNBUSDT",
+    "DOGEUSDT"
+  ],
+  "survived": false,
+  "barriers_passed": 1,
+  "robustness": 0.1061,
+  "failed_barriers": [
+    "1. Out-of-sample",
+    "6. Стабильность параметров",
+    "3. Кросс-инструмент",
+    "2. Walk-forward",
+    "5. Поправка на multiple testing",
+    "7. Реалистичные издержки"
+  ],
+  "barrier_notes": {
+    "1. Out-of-sample": "train exp=-0.080R sharpe=-0.054 n=147 -> test exp=-0.096R PF=0.88 sharpe=-0.064 n=62 (сохранение эджа 0%)",
+    "6. Стабильность параметров": "центр exp=-0.080R, медиана соседей=-0.123R (0% от центра), в плюсе 0% из 4 соседей",
+    "3. Кросс-инструмент": "в плюсе 0/4 инструментов с выборкой (всего пригодных 5/5); DOGEUSDT: exp=-0.160R n=202",
+    "4. Минимум сделок": "всего 1010 сделок; инструментов с достаточной выборкой 5/5",
+    "2. Walk-forward": "2/6 окон в плюсе (33%), суммарно OOS exp=-0.275R n=124",
+    "5. Поправка на multiple testing": "DSR=0.061 (нужно >= 0.95) при 2618 пробах; SR=-0.064 против планки случайного максимума +0.136; нужно сделок для значимости: бесконечно, есть 62",
+    "7. Реалистичные издержки": "round-trip 30 bps, издержки съедают 218% валовой; медиана стопа = 0.79 ATR; при x2 издержках exp=-0.374R (было -0.132R)"
+  },
+  "barrier_detail": {
+    "1. Out-of-sample": {
+      "train": {
+        "n_trades": 147,
+        "winrate": 0.41496598639455784,
+        "profit_factor": 0.8956229990026967,
+        "expectancy_R": -0.08021471290519062,
+        "std_R": 1.480180702211018,
+        "sharpe_trade": -0.05419251364740129,
+        "total_R": -11.791562797063028,
+        "max_dd_R": 27.707634615191573,
+        "skew": 0.3318924385047259,
+        "kurtosis": 1.1750984474292043,
+        "max_loss_streak": 8,
+        "avg_win_R": 1.6586775106581197,
+        "avg_loss_R": -1.3136150110140503
+      },
+      "test": {
+        "n_trades": 62,
+        "winrate": 0.43548387096774194,
+        "profit_factor": 0.8758373871517362,
+        "expectancy_R": -0.09577735919797369,
+        "std_R": 1.494226939279317,
+        "sharpe_trade": -0.06409826826182656,
+        "total_R": -5.938196270274367,
+        "max_dd_R": 16.654960955306368,
+        "skew": 0.2283243691397814,
+        "kurtosis": 1.2658472519559634,
+        "max_loss_streak": 6,
+        "avg_win_R": 1.5513986908702448,
+        "avg_loss_R": -1.3664560263934564
+      },
+      "retention": 0.0,
+      "checks": {
+        "трейдов на test": true,
+        "ожидаемость test > 0": false,
+        "PF test": false,
+        "эдж не осыпался": false
+      },
+      "split_ts": 1759618080000
+    },
+    "6. Стабильность параметров": {
+      "center_expectancy": -0.08021471290519062,
+      "plateau_ratio": 0.0,
+      "frac_positive": 0.0,
+      "neighbours": [
+        {
+          "path": "entry.params.swing_left",
+          "value": 3,
+          "n": 158,
+          "expectancy_R": -0.11439904518398844,
+          "sharpe": -0.07711247323204926
+        },
+        {
+          "path": "entry.params.ob_max_age",
+          "value": 60,
+          "n": 147,
+          "expectancy_R": -0.08021471290519062,
+          "sharpe": -0.05419251364740129
+        },
+        {
+          "path": "exit.params.rr",
+          "value": 1.5,
+          "n": 149,
+          "expectancy_R": -0.13120228662049677,
+          "sharpe": -0.10515511816353625
+        },
+        {
+          "path": "exit.params.rr",
+          "value": 3.0,
+          "n": 138,
+          "expectancy_R": -0.19695823915918087,
+          "sharpe": -0.10923153448466041
+        }
+      ],
+      "checks": {
+        "медиана соседей держится": false,
+        "большинство соседей в плюсе": false,
+        "центр положительный": false
+      }
+    },
+    "3. Кросс-инструмент": {
+      "per_symbol": [
+        {
+          "symbol": "BTCUSDT",
+          "n": 211,
+          "expectancy_R": -0.06835197857501318,
+          "pf": 0.9103075258531806,
+          "sharpe": -0.0460785190911024,
+          "primary": true
+        },
+        {
+          "symbol": "ETHUSDT",
+          "n": 166,
+          "expectancy_R": -0.10210977188503098,
+          "pf": 0.8664653110534363,
+          "sharpe": -0.07004826038864752,
+          "primary": false
+        },
+        {
+          "symbol": "SOLUSDT",
+          "n": 215,
+          "expectancy_R": -0.18848945359756877,
+          "pf": 0.7595875709258363,
+          "sharpe": -0.13388886300276795,
+          "primary": false
+        },
+        {
+          "symbol": "BNBUSDT",
+          "n": 216,
+          "expectancy_R": -0.13330395377486745,
+          "pf": 0.8295642688753049,
+          "sharpe": -0.09197046370634934,
+          "primary": false
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "n": 202,
+          "expectancy_R": -0.16026056738645994,
+          "pf": 0.7928334560357799,
+          "sharpe": -0.1129660994191089,
+          "primary": false
+        }
+      ],
+      "checks": {
+        "хватает инструментов с выборкой": true,
+        "эдж держится на большинстве": false,
+        "нет катастрофы на DOGEUSDT": true
+      }
+    },
+    "4. Минимум сделок": {
+      "total": 1010,
+      "eligible": 5,
+      "checks": {
+        "всего сделок >= 200": true,
+        "инструментов с >= 30 сделок": true
+      }
+    },
+    "2. Walk-forward": {
+      "windows": [
+        {
+          "from": "2024-12-31",
+          "to": "2025-03-31",
+          "n": 23,
+          "expectancy_R": -0.3970790024711139,
+          "sharpe": -0.2875692582441409,
+          "cfg": "honest_order_block|ob_max_age=40,swing_left=4,rr=2.0"
+        },
+        {
+          "from": "2025-03-31",
+          "to": "2025-06-29",
+          "n": 17,
+          "expectancy_R": -0.12718817830110016,
+          "sharpe": -0.080401859262659,
+          "cfg": "honest_order_block|ob_max_age=40,swing_left=4,rr=2.0"
+        },
+        {
+          "from": "2025-06-29",
+          "to": "2025-09-27",
+          "n": 26,
+          "expectancy_R": -0.8234859300503989,
+          "sharpe": -0.7695456362056988,
+          "cfg": "honest_order_block|ob_max_age=40,swing_left=3,rr=1.5"
+        },
+        {
+          "from": "2025-09-27",
+          "to": "2025-12-26",
+          "n": 19,
+          "expectancy_R": 0.346628286603993,
+          "sharpe": 0.24080637507148034,
+          "cfg": "honest_order_block|ob_max_age=40,swing_left=3,rr=2.0"
+        },
+        {
+          "from": "2025-12-26",
+          "to": "2026-03-26",
+          "n": 20,
+          "expectancy_R": -0.4298740437467088,
+          "sharpe": -0.23336280283654956,
+          "cfg": "honest_order_block|ob_max_age=40,swing_left=4,rr=3.0"
+        },
+        {
+          "from": "2026-03-26",
+          "to": "2026-06-24",
+          "n": 19,
+          "expectancy_R": 0.034584229366911204,
+          "sharpe": 0.017835579248338146,
+          "cfg": "honest_order_block|ob_max_age=40,swing_left=4,rr=3.0"
+        }
+      ],
+      "share_positive": 0.3333333333333333,
+      "pooled": {
+        "n_trades": 124,
+        "winrate": 0.3467741935483871,
+        "profit_factor": 0.6919165868888951,
+        "expectancy_R": -0.2746781721028362,
+        "std_R": 1.5571461526713706,
+        "sharpe_trade": -0.17639845279237953,
+        "total_R": -34.06009334075168,
+        "max_dd_R": 41.262146288170804,
+        "skew": 0.7256389144145261,
+        "kurtosis": 1.8678248138859848,
+        "max_loss_streak": 9,
+        "avg_win_R": 1.7789461547734835,
+        "avg_loss_R": -1.3648738024198948
+      },
+      "checks": {
+        "большинство окон в плюсе": false,
+        "суммарный OOS в плюсе": false
+      }
+    },
+    "5. Поправка на multiple testing": {
+      "dsr": 0.0605186078249117,
+      "sr": -0.06409826826182656,
+      "sr_threshold": 0.13588881919743176,
+      "n_trials": 2618,
+      "n_obs": 62,
+      "sr_variance": 0.001490796730287776,
+      "min_track_record": Infinity,
+      "metrics": {
+        "n_trades": 62,
+        "winrate": 0.43548387096774194,
+        "profit_factor": 0.8758373871517362,
+        "expectancy_R": -0.09577735919797369,
+        "std_R": 1.494226939279317,
+        "sharpe_trade": -0.06409826826182656,
+        "total_R": -5.938196270274367,
+        "max_dd_R": 16.654960955306368,
+        "skew": 0.2283243691397814,
+        "kurtosis": 1.2658472519559634,
+        "max_loss_streak": 6,
+        "avg_win_R": 1.5513986908702448,
+        "avg_loss_R": -1.3664560263934564
+      }
+    },
+    "7. Реалистичные издержки": {
+      "round_trip_bps": 30.0,
+      "stop_to_atr": 0.7920635618193466,
+      "cost_share": 2.183092805345367,
+      "stressed": {
+        "n_trades": 1010,
+        "winrate": 0.3702970297029703,
+        "profit_factor": 0.59297259627054,
+        "expectancy_R": -0.37433380755083856,
+        "std_R": 1.453452425045806,
+        "sharpe_trade": -0.25754802916169844,
+        "total_R": -378.0771456263471,
+        "max_dd_R": 377.83262733213445,
+        "skew": 0.47006287811833997,
+        "kurtosis": 1.5112602889731523,
+        "max_loss_streak": 15,
+        "avg_win_R": 1.4727186846919684,
+        "avg_loss_R": -1.460493606448338
+      },
+      "checks": {
+        "round-trip >= 30.0 bps": true,
+        "стоп не мельче 0.5 ATR": true,
+        "переживает удвоение издержек": false
+      }
+    }
+  },
+  "best_config": {
+    "name": "honest_order_block|ob_max_age=40,swing_left=4,rr=2.0",
+    "entry": {
+      "type": "order_block",
+      "params": {
+        "swing_left": 4,
+        "swing_right": 3,
+        "ob_use_body": false,
+        "ob_max_age": 40,
+        "stop_buffer": 0.0005
+      }
+    },
+    "stop": {
+      "type": "block",
+      "params": {}
+    },
+    "exit": {
+      "type": "fixed_rr",
+      "params": {
+        "rr": 2.0,
+        "max_bars": 120
+      }
+    },
+    "direction": "both",
+    "timeframe": "4h",
+    "filters": [],
+    "sizing": {
+      "risk_pct": 0.01,
+      "max_leverage": 100.0
+    },
+    "costs": {
+      "fee_bps_per_side": 6.0,
+      "slip_bps_per_side": 9.0,
+      "funding_default_8h": 0.0001
+    },
+    "meta": {
+      "source": "smc_order_block_backtest.py, методология трейдера"
+    }
+  },
+  "metrics": {
+    "n_trades": 1010,
+    "winrate": 0.3712871287128713,
+    "profit_factor": 0.8297331011412917,
+    "expectancy_R": -0.13174654531005592,
+    "std_R": 1.4409029717714577,
+    "sharpe_trade": -0.09143332194539489,
+    "total_R": -133.06401076315632,
+    "max_dd_R": 152.55956921792023,
+    "skew": 0.5216752754885159,
+    "kurtosis": 1.337566252232884,
+    "max_loss_streak": 15,
+    "avg_win_R": 1.729169361606113,
+    "avg_loss_R": -1.2307126320715729
+  },
+  "flags": [],
+  "trials_total": 2618
+}
