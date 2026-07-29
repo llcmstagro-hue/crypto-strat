@@ -202,6 +202,33 @@ def run_backtest(df: pd.DataFrame,
     struct_ema = (ind.ema(c, int(exit_p.get("ema_period", 50)))
                   if cfg.exit["type"] == "structure" else None)
 
+    # --- выходы Куртни Смита ---
+    # Всё, что им нужно, считается ОДИН раз здесь и кладётся в aux. Держать
+    # эти массивы в одном месте важно по той же причине, что и conqueror_factors:
+    # если выход пересчитывает то же самое отдельно от входа, две реализации
+    # рано или поздно разъедутся, и разъедутся тихо.
+    aux: dict = {}
+    ex_type = cfg.exit["type"]
+    if ex_type == "channel":
+        # выход по ПРОТИВОПОЛОЖНОМУ M-дневному каналу: у Смита это тот же самый
+        # приказ, что открывал бы позицию в другую сторону, — «пусть исходный
+        # приказ на продажу остаётся у вашего брокера»
+        cu, cd = ind.donchian(h, l, int(exit_p.get("period", 20)),
+                              exclude_current=True)
+        aux["chan_up"], aux["chan_dn"] = cu, cd
+        aux["cutoff"] = bool(exit_p.get("cutoff", False))
+    if ex_type == "bishop" or bool(exit_p.get("bishop", False)):
+        a_, _p_, _m_ = ind.adx(h, l, c, int(exit_p.get("adx_period", 14)))
+        aux["adx"] = a_
+        aux["adx_level"] = float(exit_p.get("adx_level", 40.0))
+    if ex_type == "swing_structure":
+        from .blocks import smith_swing_state
+        st, hd, ld, hl, ll, nh, nl = smith_swing_state(df, exit_p)
+        aux.update({"sw_state": st, "sw_hi_dir": hd, "sw_lo_dir": ld,
+                    "sw_hi_lvl": hl, "sw_lo_lvl": ll,
+                    "sw_n_hi": nh, "sw_n_lo": nl,
+                    "sw_buf": float(exit_p.get("stop_buffer", 0.0005))})
+
     cost_rate = cfg.cost_rate_per_side()
     default_funding = float(cfg.costs["funding_default_8h"])
     risk_pct = float(cfg.sizing["risk_pct"])
@@ -225,6 +252,7 @@ def run_backtest(df: pd.DataFrame,
     n_no_stop = 0
     n_expired = 0
     n_inverted = 0
+    n_bad_target = 0
 
     for k in range(n):
         # 1) новые заявки становятся живыми ровно на баре signal_bar+1
@@ -254,7 +282,7 @@ def run_backtest(df: pd.DataFrame,
         # 3) управление открытой позицией
         if pos is not None:
             closed = _manage(pos, k, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
-                             exit_p, be_at_r, conq=conq)
+                             exit_p, be_at_r, conq=conq, aux=aux)
             if closed is not None:
                 tr = _close_trade(pos, closed, cost_rate, funding, default_funding,
                                   tf_ms, ts, equity)
@@ -291,6 +319,19 @@ def run_backtest(df: pd.DataFrame,
                     (it.direction < 0 and stop_price <= entry_price))
                 stop_dist = (abs(entry_price - stop_price)
                              if stop_price is not None else 0.0)
+                # цель Slingshot: та же проверка стороны, что и у стопа. Вход
+                # стоп-приказом может проскочить сквозь всю формацию, и тогда
+                # «цель прибыли» окажется ПОЗАДИ входа — такая сделка
+                # закрылась бы «по тейку» с убытком. Это не сделка метода.
+                tgt = None
+                if cfg.exit["type"] == "slingshot":
+                    tgt = it.meta.get("target")
+                    if tgt is not None and (
+                            (it.direction > 0 and tgt <= entry_price) or
+                            (it.direction < 0 and tgt >= entry_price)):
+                        n_bad_target += 1
+                        active.remove(it)
+                        continue
                 if stop_price is None or stop_dist <= 0 or inverted:
                     if inverted:
                         n_inverted += 1
@@ -309,7 +350,21 @@ def run_backtest(df: pd.DataFrame,
                         "init_stop": stop_price, "stop_dist": stop_dist,
                         "qty": qty, "risk": qty * stop_dist,
                         "tp": (entry_price + it.direction * rr * stop_dist
-                               if cfg.exit["type"] == "fixed_rr" else None),
+                               if cfg.exit["type"] == "fixed_rr"
+                               else (float(tgt) if tgt is not None else None)),
+                        # Mini-Slingshot: стоп в безубыток, когда пройдена
+                        # ПОЛОВИНА ПУТИ до цели (у автора именно расстояние до
+                        # цели, а не абстрактные R) — пересчитываем в R здесь,
+                        # потому что дальше движок работает только в R
+                        "be_at_r": (0.5 * abs(tgt - entry_price) / stop_dist
+                                    if (tgt is not None
+                                        and exit_p.get("breakeven_at_half"))
+                                    else None),
+                        "meta": dict(it.meta),
+                        # сколько свингов было подтверждено НА МОМЕНТ входа —
+                        # база отсчёта для выхода по смене структуры
+                        "sw_n_hi0": (int(aux["sw_n_hi"][k]) if "sw_n_hi" in aux else 0),
+                        "sw_n_lo0": (int(aux["sw_n_lo"][k]) if "sw_n_lo" in aux else 0),
                         "equity_before": equity, "capped": capped,
                         "max_bars": min(max_bars, time_bars),
                         "exit_type": cfg.exit["type"],
@@ -323,7 +378,7 @@ def run_backtest(df: pd.DataFrame,
                     # позиция может быть закрыта тем же баром — проверяем сразу
                     closed = _manage(pos, k, o, h, l, c, ts, tf_ms, trail_atr,
                                      struct_ema, exit_p, be_at_r, just_entered=True,
-                                     conq=conq)
+                                     conq=conq, aux=aux)
                     if closed is not None:
                         tr = _close_trade(pos, closed, cost_rate, funding,
                                           default_funding, tf_ms, ts, equity)
@@ -356,6 +411,7 @@ def run_backtest(df: pd.DataFrame,
         "expired_orders": n_expired,
         "rejected_no_stop": n_no_stop,
         "rejected_inverted_stop": n_inverted,
+        "rejected_bad_target": n_bad_target,
         "leverage_capped": int(tdf["capped"].sum()) if len(tdf) else 0,
         "bars": n,
         "round_trip_bps": cfg.round_trip_bps(),
@@ -408,7 +464,8 @@ def _try_fill(it: OrderIntent, k: int, o, h, l) -> float | None:
 
 
 def _manage(pos: dict, k: int, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
-            exit_p: dict, be_at_r, just_entered: bool = False, conq: dict | None = None):
+            exit_p: dict, be_at_r, just_entered: bool = False,
+            conq: dict | None = None, aux: dict | None = None):
     """Ведение позиции на баре k. Возвращает (exit_bar, exit_price, reason) или None.
 
     Порядок ВНУТРИ бара зафиксирован и пессимистичен:
@@ -423,10 +480,12 @@ def _manage(pos: dict, k: int, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
         return (k, float(o[k]), reason)
 
     if not just_entered:
-        # перевод в безубыток
-        if be_at_r is not None and not pos["be_done"]:
+        # перевод в безубыток (порог позиции важнее общего — им пользуется
+        # Mini-Slingshot, у которого «половина пути до цели» своя в каждой сделке)
+        ber = pos.get("be_at_r") if pos.get("be_at_r") is not None else be_at_r
+        if ber is not None and not pos["be_done"]:
             fav = (h[k] - pos["entry_price"]) * d if d > 0 else (pos["entry_price"] - l[k])
-            if fav >= float(be_at_r) * pos["stop_dist"]:
+            if fav >= float(ber) * pos["stop_dist"]:
                 pos["stop"] = pos["entry_price"]
                 pos["be_done"] = True
 
@@ -435,6 +494,27 @@ def _manage(pos: dict, k: int, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
     adv = ((l[k] - pos["entry_price"]) if d > 0 else (pos["entry_price"] - h[k])) / pos["stop_dist"]
     pos["mfe"] = max(pos["mfe"], float(fav))
     pos["mae"] = min(pos["mae"], float(adv))
+
+    # --- Смит: выход по ПРОТИВОПОЛОЖНОМУ каналу ---
+    # Уровень M-дневного канала на баре k посчитан по барам [k-M, k-1], то есть
+    # известен ДО открытия бара k. Именно поэтому приказ обновляется здесь, ДО
+    # проверки стопа: у Смита он физически лежит у брокера весь бар.
+    if pos["exit_type"] == "channel" and aux is not None:
+        lvl = aux["chan_dn"][k] if d > 0 else aux["chan_up"][k]
+        if not np.isnan(lvl):
+            pos["stop"] = float(lvl)
+
+    # --- Смит: трейлинг по свингам (гл. 2) ---
+    # «Повышаю планку стоп-приказа всякий раз, когда нахожусь в длинной позиции
+    # и появляется более высокий минимум» — движение ТОЛЬКО в сторону прибыли,
+    # это оговорено в первоисточнике явно.
+    if pos["exit_type"] == "swing_structure" and aux is not None:
+        lvl = aux["sw_lo_lvl"][k] if d > 0 else aux["sw_hi_lvl"][k]
+        if not np.isnan(lvl):
+            b = aux["sw_buf"]
+            cand = float(lvl) * ((1 - b) if d > 0 else (1 + b))
+            pos["stop"] = (max(pos["stop"], cand) if d > 0
+                           else min(pos["stop"], cand))
 
     # стоп. Различаем НАЧАЛЬНЫЙ защитный стоп и подтянутый трейлингом:
     # выход по трейлингу выше входа — это нормальная прибыль, а не «прибыльный
@@ -482,6 +562,51 @@ def _manage(pos: dict, k: int, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
         e = struct_ema[k]
         if not np.isnan(e) and ((d > 0 and c[k] < e) or (d < 0 and c[k] > e)):
             pos["pending_exit"] = "structure"
+
+    # --- Смит: правило отсечения (гл. 3) ---
+    # «Цена закрытия должна быть выше уровня прорыва в течение первых двух дней
+    # сделки, в противном случае вы выйдете по цене закрытия.» Смотрим на
+    # ИСХОДНЫЙ уровень прорыва, а не на новый экстремум, образовавшийся в день
+    # прорыва, — автор это подчёркивает отдельно. Условие пяти дней проверено
+    # во входном блоке и лежит в мете заявки.
+    if (pos["exit_type"] == "channel" and aux is not None and aux.get("cutoff")
+            and bars_held <= 1 and pos["pending_exit"] is None):
+        m = pos.get("meta") or {}
+        lvl = m.get("level")
+        if m.get("cutoff") and lvl is not None:
+            if (d > 0 and c[k] < lvl) or (d < 0 and c[k] > lvl):
+                pos["pending_exit"] = "cutoff"
+
+    # --- Смит: выход Bishop (гл. 2) ---
+    # «Жду, пока линия ADX поднимется выше 40, а затем начнёт опускаться.
+    # Закрываю свои позиции в первый же день понижения ADX, независимо от того,
+    # насколько мал нисходящий тик.» ADX ниже 40 игнорируется полностью.
+    if aux is not None and "adx" in aux and pos["pending_exit"] is None:
+        a_ = aux["adx"]
+        if not np.isnan(a_[k]):
+            if a_[k] > aux["adx_level"]:
+                pos["bishop_armed"] = True
+            if (pos.get("bishop_armed") and k > 0 and not np.isnan(a_[k - 1])
+                    and a_[k] < a_[k - 1]):
+                pos["pending_exit"] = "bishop"
+
+    # --- Смит: структура тренда перестала быть нашей (гл. 2) ---
+    # «Смотрим на последние два максимума и видим, что на рынке до сих пор более
+    # низкие максимумы, но теперь у нас более высокие минимумы. Это нейтральный
+    # рынок... Выходим из позиции, как только на следующий день начинаются торги.»
+    if (pos["exit_type"] == "swing_structure" and aux is not None
+            and pos["pending_exit"] is None):
+        # Учитываются ТОЛЬКО свинги, подтверждённые ПОСЛЕ входа. Без этого
+        # условия выход срабатывал бы прямо на баре входа: мы входим при
+        # пробое последнего свинга, когда вторая половина структуры ещё
+        # старая, — но по Смиту сам пробой её и подтверждает («я просто
+        # должен знать, что это произойдёт»). Реагировать надо на НОВУЮ
+        # информацию, а не на ту, ради которой в сделку и вошли.
+        fresh_hi = aux["sw_n_hi"][k] > pos.get("sw_n_hi0", 0)
+        fresh_lo = aux["sw_n_lo"][k] > pos.get("sw_n_lo0", 0)
+        if ((fresh_hi and aux["sw_hi_dir"][k] == -d)
+                or (fresh_lo and aux["sw_lo_dir"][k] == -d)):
+            pos["pending_exit"] = "structure_neutral"
 
     # выход по времени / предохранитель по числу баров
     if bars_held >= pos["max_bars"]:

@@ -43,6 +43,13 @@ BLOCK_TYPE = {
     "ref_seesaw": "cross-market",
     # внешняя стратегия: согласие трёх измерителей тренда
     "conqueror": "trend",
+    # внешний источник: методы Куртни Смита
+    "channel_stop": "breakout",
+    "trend_swings": "trend",
+    "stoch_cross50": "trend",
+    "inside_day": "pattern",
+    "reversal_day": "pattern",
+    "slingshot": "pattern",
 }
 
 
@@ -86,7 +93,8 @@ class Idea:
 # Фильтры, которые несут САМОСТОЯТЕЛЬНЫЙ рыночный механизм и потому считаются
 # сигналом в лимите сложности. Технические ограничители (session) не считаются.
 MECHANISM_FILTERS = {"htf_trend", "ref_trend", "squeeze", "ma_side",
-                     "ema_slope", "atr_regime", "rsi_bound", "volume"}
+                     "ema_slope", "atr_regime", "rsi_bound", "volume",
+                     "adx_rising"}
 
 MAX_SIGNALS = 3
 

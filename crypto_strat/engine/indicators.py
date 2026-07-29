@@ -193,3 +193,46 @@ def htf_trend_causal(df: pd.DataFrame, factor: int, ema_period: int) -> np.ndarr
     out = np.zeros(n, dtype=int)
     out[ok] = np.where(htf_closes[gi_safe][ok] > e[gi_safe][ok], 1, -1)
     return out
+
+
+# --------------------------------------------------------------------------- #
+# ADX и СТОХАСТИК (нужны методам Куртни Смита)
+# --------------------------------------------------------------------------- #
+def adx(high, low, close, period: int = 14):
+    """ADX по Уайлдеру. Возвращает (adx, plus_di, minus_di).
+
+    Causal: значение на баре i использует только бары <= i. Смит применяет ADX
+    двумя способами — как фильтр («берём сигнал, только если ADX выше вчерашнего»)
+    и как выход Bishop («ADX поднялся выше 40 и начал опускаться»).
+    """
+    n = len(close)
+    up = np.zeros(n)
+    dn = np.zeros(n)
+    up[1:] = high[1:] - high[:-1]
+    dn[1:] = low[:-1] - low[1:]
+    plus_dm = np.where((up > dn) & (up > 0), up, 0.0)
+    minus_dm = np.where((dn > up) & (dn > 0), dn, 0.0)
+
+    tr = true_range(high, low, close)
+    atr_ = rma(tr, period)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        pdi = 100.0 * rma(plus_dm, period) / atr_
+        mdi = 100.0 * rma(minus_dm, period) / atr_
+        dx = 100.0 * np.abs(pdi - mdi) / (pdi + mdi)
+    dx[~np.isfinite(dx)] = np.nan
+    return rma(np.nan_to_num(dx, nan=0.0), period), pdi, mdi
+
+
+def stochastic(high, low, close, k_period: int = 14, k_smooth: int = 3,
+               d_period: int = 3):
+    """Стохастик %K/%D. Окно ВКЛЮЧАЕТ текущий бар — так он и определён
+    (положение закрытия внутри диапазона последних k баров), это не lookahead."""
+    s_h = pd.Series(high).rolling(k_period, min_periods=k_period).max().to_numpy()
+    s_l = pd.Series(low).rolling(k_period, min_periods=k_period).min().to_numpy()
+    rng = s_h - s_l
+    with np.errstate(divide="ignore", invalid="ignore"):
+        raw = 100.0 * (close - s_l) / rng
+    raw[~np.isfinite(raw)] = np.nan
+    k = pd.Series(raw).rolling(k_smooth, min_periods=k_smooth).mean().to_numpy()
+    d = pd.Series(k).rolling(d_period, min_periods=d_period).mean().to_numpy()
+    return k, d

@@ -662,8 +662,367 @@ def entry_consensus(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
     return sorted(intents, key=lambda x: x.signal_bar)
 
 
+# --------------------------------------------------------------------------- #
+# БЛОКИ КУРТНИ СМИТА — извлечены из первоисточника (книга), не из чужих скриптов
+#
+# Общая оговорка об ИСПОЛНЕНИИ, действующая на все блоки этого раздела.
+# Смит многократно пишет «входим/выходим по цене закрытия». Движок исполняет
+# такие приказы по ОТКРЫТИЮ СЛЕДУЮЩЕГО бара — сознательно консервативнее.
+# Причина в том, что «решение принято по закрытию, исполнено по этому же
+# закрытию» — это ровно тот шов, где lookahead и заводится. Автор, кстати,
+# сам разрешает такую замену: «если вы не можете выйти по цене закрытия...
+# то вам остается выйти при первой же возможности».
+# Стоп- и лимит-приказы, наоборот, исполняются ВНУТРИ бара — они физически
+# лежат у брокера заранее, никакого знания о будущем не требуют.
+# --------------------------------------------------------------------------- #
+def entry_channel_stop(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """Прорыв канала СТОП-ПРИКАЗАМИ (Смит, гл. 3) — не по закрытию.
+
+    Отличие от `donchian_breakout` принципиальное, а не косметическое.
+    Дончиан в нашей библиотеке даёт сигнал на ЗАКРЫТИИ бара за границей канала,
+    то есть вход происходит уже после того, как весь импульс бара отработан.
+    Смит же держит у брокера приказ чуть выше N-дневного максимума и чуть ниже
+    N-дневного минимума и переставляет их КАЖДЫЙ день. Исполнение — внутри
+    бара, по цене уровня: «Я предпочитаю покупать на уровне три пипса выше
+    уровня прорыва».
+
+    Причинность: максимум окна [i-N+1, i] известен на закрытии бара i, а приказ
+    выставляется на бар i+1. Заглянуть вперёд негде.
+
+    Правило отсечения (тоже гл. 3) навешивается флагом `cutoff`: в мету заявки
+    кладётся уровень прорыва и признак «условие пяти дней выполнено» —
+    выход ими пользуется, сам вход не меняется.
+    """
+    _, h, l, c = _arrays(df)
+    n = len(df)
+    period = int(p.get("period", 55))
+    buf = float(p.get("buffer", 0.0002))
+    cutoff = bool(p.get("cutoff", False))
+    flat_days = int(p.get("flat_days", 5))
+
+    up = pd.Series(h).rolling(period, min_periods=period).max().to_numpy()
+    dn = pd.Series(l).rolling(period, min_periods=period).min().to_numpy()
+
+    def _flat(arr, i, rising: bool) -> bool:
+        """Условие пяти дней: граница канала стояла на месте или шла ПРОТИВ
+        прорыва как минимум flat_days баров. Смысл авторский: отсечение
+        применяется только к боковому рынку, а не к сильному тренду."""
+        if i - flat_days < 0:
+            return False
+        for j in range(flat_days):
+            a, b = arr[i - j], arr[i - j - 1]
+            if np.isnan(a) or np.isnan(b):
+                return False
+            if (a > b) if rising else (a < b):
+                return False
+        return True
+
+    intents = []
+    for i in range(n - 1):
+        if np.isnan(up[i]) or np.isnan(dn[i]):
+            continue
+        lvl_u, lvl_d = float(up[i]), float(dn[i])
+        m_u = {"block": "channel_stop", "level": lvl_u}
+        m_d = {"block": "channel_stop", "level": lvl_d}
+        if cutoff:
+            m_u["cutoff"] = _flat(up, i, rising=True)
+            m_d["cutoff"] = _flat(dn, i, rising=False)
+        intents.append(OrderIntent(+1, i, "stop", lvl_u * (1 + buf),
+                                   {"type": "none"}, 1, meta=m_u))
+        intents.append(OrderIntent(-1, i, "stop", lvl_d * (1 - buf),
+                                   {"type": "none"}, 1, meta=m_d))
+    return intents
+
+
+def smith_swing_state(df: pd.DataFrame, p: dict):
+    """Свинги по Демарку в трактовке Смита и структура тренда (гл. 2).
+
+    Определение свинг-хая у Смита: справа бар с более низким максимумом,
+    слева — не менее N баров с более низкими максимумами. Ранг = сколько баров
+    слева; значимыми автор считает ТРЁХБАРНЫЕ, одно- и двухбарные игнорирует.
+    Отсюда left=3, right=1.
+
+    Структура: бычий рынок = растут и максимумы, и минимумы; медвежий = падают
+    и те, и другие; всё остальное — нейтральный. Свинг становится известен
+    только на баре подтверждения (i+right) — до этого момента система о нём
+    не знает и знать не может.
+
+    Возвращает по барам: (state, hi_dir, lo_dir, hi_lvl, lo_lvl, n_hi, n_lo),
+    где hi_dir/lo_dir — направление ДВУХ последних свингов соответствующего
+    типа, а n_hi/n_lo — сколько свингов каждого типа УЖЕ подтверждено к бару.
+    Счётчики нужны выходу: он обязан отличать «структура изменилась» от
+    «структура ещё не успела догнать наш пробой».
+    """
+    _, h, l, _c = _arrays(df)
+    n = len(df)
+    left = int(p.get("swing_left", 3))
+    right = int(p.get("swing_right", 1))
+    sh, sl = ind.find_swings(h, l, left, right)
+
+    state = np.zeros(n, dtype=np.int8)
+    hi_dir = np.zeros(n, dtype=np.int8)
+    lo_dir = np.zeros(n, dtype=np.int8)
+    hi_lvl = np.full(n, np.nan)
+    lo_lvl = np.full(n, np.nan)
+    n_hi = np.zeros(n, dtype=np.int32)
+    n_lo = np.zeros(n, dtype=np.int32)
+
+    ph = pl = 0
+    hs: list[float] = []
+    ls: list[float] = []
+    for j in range(n):
+        while ph < len(sh) and sh[ph] + right <= j:
+            hs.append(float(h[sh[ph]])); ph += 1
+        while pl < len(sl) and sl[pl] + right <= j:
+            ls.append(float(l[sl[pl]])); pl += 1
+        if hs:
+            hi_lvl[j] = hs[-1]
+        if ls:
+            lo_lvl[j] = ls[-1]
+        if len(hs) >= 2:
+            hi_dir[j] = 1 if hs[-1] > hs[-2] else (-1 if hs[-1] < hs[-2] else 0)
+        if len(ls) >= 2:
+            lo_dir[j] = 1 if ls[-1] > ls[-2] else (-1 if ls[-1] < ls[-2] else 0)
+        n_hi[j], n_lo[j] = len(hs), len(ls)
+        if hi_dir[j] > 0 and lo_dir[j] > 0:
+            state[j] = 1
+        elif hi_dir[j] < 0 and lo_dir[j] < 0:
+            state[j] = -1
+    return state, hi_dir, lo_dir, hi_lvl, lo_lvl, n_hi, n_lo
+
+
+def entry_trend_swings(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """Анализ тренда по свингам (Смит, гл. 2) — вход НА ОПЕРЕЖЕНИЕ.
+
+    Ключевая мысль автора, которую легко потерять при формализации: он не ждёт
+    завершения структуры. Увидев более низкий максимум (половина определения
+    медвежьего рынка), он ставит приказ на продажу у последнего минимума
+    колебания — «мне не надо ждать, пока мы достигнем более низкого минимума,
+    чтобы начать играть на понижение. Я просто должен знать, что это
+    произойдёт».
+
+    Отсюда правило: hi_dir = -1 -> стоп-приказ на продажу у последнего
+    свинг-лоу; lo_dir = +1 -> стоп-приказ на покупку у последнего свинг-хая.
+    Само исполнение приказа И ЕСТЬ момент, когда структура становится
+    направленной: пробив последний лоу при падающих хаях, рынок создаёт более
+    низкий лоу, то есть медвежью структуру.
+
+    Приказы переставляются каждый бар, потому что уровни двигаются вместе с
+    появлением новых подтверждённых свингов.
+    """
+    _, h, l, _c = _arrays(df)
+    n = len(df)
+    _state, hi_dir, lo_dir, hi_lvl, lo_lvl, _nh, _nl = smith_swing_state(df, p)
+    buf = float(p.get("buffer", 0.0002))
+
+    intents = []
+    for i in range(n - 1):
+        if lo_dir[i] > 0 and not np.isnan(hi_lvl[i]):
+            intents.append(OrderIntent(
+                +1, i, "stop", float(hi_lvl[i]) * (1 + buf), {"type": "none"}, 1,
+                meta={"block": "trend_swings", "level": float(hi_lvl[i])}))
+        if hi_dir[i] < 0 and not np.isnan(lo_lvl[i]):
+            intents.append(OrderIntent(
+                -1, i, "stop", float(lo_lvl[i]) * (1 - buf), {"type": "none"}, 1,
+                meta={"block": "trend_swings", "level": float(lo_lvl[i])}))
+    return intents
+
+
+def entry_stoch_cross50(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """Стохастик как механическая система (Смит, гл. 5).
+
+    Дословно: «покупать, когда стохастик %K пересекает линию на отметке выше
+    50, и продавать, когда ниже 50. Вы всегда будете присутствовать на рынке».
+    Это единственное полностью механическое правило главы — дивергенции автор
+    торгует дискреционно («открою короткую, если увижу любой предлог»), и
+    формализовать их без домысливания нельзя, поэтому они и не формализуются.
+    """
+    _, h, l, c = _arrays(df)
+    k, _d = ind.stochastic(h, l, c, int(p.get("k_period", 14)),
+                           int(p.get("k_smooth", 3)), int(p.get("d_period", 3)))
+    intents = []
+    for i in range(1, len(df)):
+        if np.isnan(k[i]) or np.isnan(k[i - 1]):
+            continue
+        if k[i] > 50.0 >= k[i - 1]:
+            intents.append(OrderIntent(+1, i, "market", None, {"type": "none"}, 1,
+                                       meta={"block": "stoch_cross50"}))
+        elif k[i] < 50.0 <= k[i - 1]:
+            intents.append(OrderIntent(-1, i, "market", None, {"type": "none"}, 1,
+                                       meta={"block": "stoch_cross50"}))
+    return intents
+
+
+def entry_inside_day(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """Внутренний день (Смит, гл. 6) — «мини-версия прорыва канала».
+
+    Внутренний день = весь диапазон укладывается в диапазон предыдущего:
+    максимум ниже, минимум выше. Автор трактует это как ничью быков и медведей
+    и ставит стоп-приказы по обе стороны бара, чтобы пойти за победившей
+    стороной. Защитный стоп — за противоположной границей того же бара.
+    Позиция закрывается в тот же день (у нас — по открытию следующего бара,
+    см. общую оговорку об исполнении выше).
+    """
+    _o, h, l, _c = _arrays(df)
+    buf = float(p.get("buffer", 0.0002))
+    sbuf = float(p.get("stop_buffer", 0.0005))
+    intents = []
+    for i in range(1, len(df) - 1):
+        if not (h[i] < h[i - 1] and l[i] > l[i - 1]):
+            continue
+        if h[i] <= l[i]:
+            continue
+        intents.append(OrderIntent(
+            +1, i, "stop", float(h[i]) * (1 + buf),
+            {"type": "level", "price": float(l[i]) * (1 - sbuf)}, 1,
+            meta={"block": "inside_day"}))
+        intents.append(OrderIntent(
+            -1, i, "stop", float(l[i]) * (1 - buf),
+            {"type": "level", "price": float(h[i]) * (1 + sbuf)}, 1,
+            meta={"block": "inside_day"}))
+    return intents
+
+
+def entry_reversal_day(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """День разворота (Смит, гл. 6).
+
+    Бычий: бар ушёл НИЖЕ минимума предыдущего дня, но закрылся ВЫШЕ его
+    закрытия — медведи начали день, быки его забрали. Медвежий — зеркально.
+    Автор входит под закрытие дня разворота и держит до закрытия следующего;
+    защитный стоп — за экстремумом дня разворота.
+    """
+    _o, h, l, c = _arrays(df)
+    sbuf = float(p.get("stop_buffer", 0.0005))
+    intents = []
+    for i in range(1, len(df)):
+        if l[i] < l[i - 1] and c[i] > c[i - 1]:
+            intents.append(OrderIntent(
+                +1, i, "market", None,
+                {"type": "level", "price": float(l[i]) * (1 - sbuf)}, 1,
+                meta={"block": "reversal_day"}))
+        elif h[i] > h[i - 1] and c[i] < c[i - 1]:
+            intents.append(OrderIntent(
+                -1, i, "market", None,
+                {"type": "level", "price": float(h[i]) * (1 + sbuf)}, 1,
+                meta={"block": "reversal_day"}))
+    return intents
+
+
+def entry_slingshot(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """Slingshot / Mini-Slingshot (Смит, гл. 8).
+
+    Медвежья формация (бычья зеркальна):
+      * ГЛАВНЫЙ МАКСИМУМ — свинг-хай выше предыдущего свинг-хая;
+      * ГЛАВНЫЙ МИНИМУМ — свинг-лоу после него;
+      * МАКСИМУМ SLINGSHOT — следующий свинг-хай, который НЕ смог обновить
+        главный максимум («этот максимум — провал»).
+    Два подтверждения, ради которых метод и существует:
+      1) между главным максимумом и максимумом Slingshot не меньше `min_gap`
+         баров — гарантия, что рынок устоялся, а не рвётся;
+      2) не больше `max_gap` баров — гарантия, что мы не ловим дно.
+    Вход — стоп-приказ на прорыв главного минимума. Стоп — максимум Slingshot.
+    Цель прибыли: из главного минимума вычитается (макс. Slingshot − главный
+    минимум), то есть проекция всей формации вниз от точки входа.
+
+    Mini-Slingshot (`mini=True`) снимает верхнее ограничение по расстоянию и
+    смягчает нижнее — автор явно жертвует качеством подтверждений ради частоты.
+
+    Причинность: свинг известен только на баре подтверждения (i+right), поэтому
+    сигнал ставится там, а не на самом экстремуме.
+    """
+    _o, h, l, _c = _arrays(df)
+    n = len(df)
+    left = int(p.get("swing_left", 2))
+    right = int(p.get("swing_right", 2))
+    min_gap = int(p.get("min_gap", 3))
+    max_gap = int(p.get("max_gap", 20))
+    mini = bool(p.get("mini", False))
+    if mini:
+        min_gap = int(p.get("min_gap", 2))
+        max_gap = 10 ** 9
+    max_age = int(p.get("max_age", 20))
+    sbuf = float(p.get("stop_buffer", 0.0005))
+    buf = float(p.get("buffer", 0.0002))
+
+    sh, sl = ind.find_swings(h, l, left, right)
+    sh_set = sorted(sh)
+    sl_set = sorted(sl)
+    intents = []
+
+    def _between(lows, a, b):
+        return [i for i in lows if a < i < b]
+
+    # --- медвежья формация: главный максимум -> главный минимум -> Slingshot ---
+    for idx in range(1, len(sh_set)):
+        b = sh_set[idx]                      # кандидат в максимум Slingshot
+        a = None
+        for prev in reversed(sh_set[:idx]):  # последний БОЛЕЕ ВЫСОКИЙ свинг-хай
+            if h[prev] > h[b]:
+                a = prev
+                break
+        if a is None:
+            continue
+        gap = b - a
+        if gap < min_gap or gap > max_gap:
+            continue
+        mids = _between(sl_set, a, b)
+        if not mids:
+            continue
+        ml = min(mids, key=lambda i: l[i])   # главный минимум формации
+        sig = b + right                      # бар подтверждения максимума Slingshot
+        if sig >= n:
+            continue
+        lo, hi = float(l[ml]), float(h[b])
+        if hi <= lo:
+            continue
+        intents.append(OrderIntent(
+            -1, sig, "stop", lo * (1 - buf),
+            {"type": "level", "price": hi * (1 + sbuf)}, max_age,
+            invalidate={"type": "close_beyond", "level": hi, "side": "above"},
+            meta={"block": "slingshot", "target": lo - (hi - lo),
+                  "sling": hi, "major": lo}))
+
+    # --- бычья формация (зеркально) ---
+    for idx in range(1, len(sl_set)):
+        b = sl_set[idx]
+        a = None
+        for prev in reversed(sl_set[:idx]):
+            if l[prev] < l[b]:
+                a = prev
+                break
+        if a is None:
+            continue
+        gap = b - a
+        if gap < min_gap or gap > max_gap:
+            continue
+        mids = _between(sh_set, a, b)
+        if not mids:
+            continue
+        mh = max(mids, key=lambda i: h[i])
+        sig = b + right
+        if sig >= n:
+            continue
+        hi, lo = float(h[mh]), float(l[b])
+        if hi <= lo:
+            continue
+        intents.append(OrderIntent(
+            +1, sig, "stop", hi * (1 + buf),
+            {"type": "level", "price": lo * (1 - sbuf)}, max_age,
+            invalidate={"type": "close_beyond", "level": lo, "side": "below"},
+            meta={"block": "slingshot", "target": hi + (hi - lo),
+                  "sling": lo, "major": hi}))
+
+    return sorted(intents, key=lambda x: x.signal_bar)
+
+
 ENTRY_BLOCKS = {
     "order_block": entry_order_block,
+    "channel_stop": entry_channel_stop,
+    "trend_swings": entry_trend_swings,
+    "stoch_cross50": entry_stoch_cross50,
+    "inside_day": entry_inside_day,
+    "reversal_day": entry_reversal_day,
+    "slingshot": entry_slingshot,
     "rsi_threshold": entry_rsi_threshold,
     "consensus": entry_consensus,
     "conqueror": entry_conqueror,
@@ -796,8 +1155,27 @@ def filter_squeeze(df: pd.DataFrame, p: dict):
     return m, m
 
 
+def filter_adx_rising(df: pd.DataFrame, p: dict):
+    """Фильтр ADX Смита (гл. 2 и 3): берём сигнал, только если ADX ВЫШЕ, чем
+    вчера. «Не обращайте внимания на поступающие сигналы, если ADX ниже, чем
+    был день назад».
+
+    Логика автора: и анализ тренда, и прорывы канала — техники следования за
+    трендом, они зарабатывают на сильных движениях и теряют в их отсутствие.
+    Растущий ADX означает, что движение усиливается; падающий — что рынок
+    сваливается в боковик, где трендовая техника обречена платить издержки.
+    Направление ADX не различает лонг и шорт, поэтому маска общая.
+    """
+    h, l, c = (df[x].to_numpy() for x in ("high", "low", "close"))
+    a, _pdi, _mdi = ind.adx(h, l, c, int(p.get("period", 14)))
+    m = np.zeros(len(df), dtype=bool)
+    m[1:] = (~np.isnan(a[1:])) & (~np.isnan(a[:-1])) & (a[1:] > a[:-1])
+    return m, m
+
+
 FILTER_BLOCKS = {
     "htf_trend": filter_htf_trend,
+    "adx_rising": filter_adx_rising,
     "ma_side": filter_ma_side,
     "ref_trend": filter_ref_trend,
     "squeeze": filter_squeeze,

@@ -82,6 +82,36 @@ CONFIGS = [
      "stop": {"type": "atr", "params": {"period": 14, "mult": 2.0}},
      "exit": {"type": "trailing_atr", "params": {"period": 14, "mult": 3.0, "max_bars": 200}},
      "filters": [{"type": "ref_trend", "params": {"ref": "REF", "ema_period": 50}}]},
+    # --- внешний источник: методы Куртни Смита ---
+    # Каждый новый блок обязан пройти ту же обрезку ряда. Слабое место здесь
+    # именно у Смита: его входы исполняются ВНУТРИ бара стоп-приказом, а часть
+    # выходов смотрит на уровень, зафиксированный при входе.
+    {"name": "smith_channel", "entry": {"type": "channel_stop",
+                                        "params": {"period": 55, "cutoff": True}},
+     "stop": {"type": "channel", "params": {"period": 20}},
+     "exit": {"type": "channel", "params": {"period": 20, "cutoff": True}},
+     "filters": [{"type": "adx_rising", "params": {"period": 14}}]},
+    {"name": "smith_swings", "entry": {"type": "trend_swings",
+                                       "params": {"swing_left": 3, "swing_right": 1}},
+     "stop": {"type": "structure", "params": {"lookback": 10}},
+     "exit": {"type": "swing_structure", "params": {"swing_left": 3, "swing_right": 1}},
+     "filters": []},
+    {"name": "smith_stoch50", "entry": {"type": "stoch_cross50", "params": {"k_period": 14}},
+     "stop": {"type": "atr", "params": {"period": 14, "mult": 2.0}},
+     "exit": {"type": "bishop", "params": {"adx_period": 14, "adx_level": 40.0}},
+     "filters": []},
+    {"name": "smith_inside", "entry": {"type": "inside_day", "params": {}},
+     "stop": {"type": "block", "params": {}},
+     "exit": {"type": "time", "params": {"bars": 0}}, "filters": []},
+    {"name": "smith_reversal", "entry": {"type": "reversal_day", "params": {}},
+     "stop": {"type": "block", "params": {}},
+     "exit": {"type": "time", "params": {"bars": 0}},
+     "filters": [{"type": "ma_side", "params": {"period": 20}}]},
+    {"name": "smith_sling", "entry": {"type": "slingshot",
+                                      "params": {"min_gap": 3, "max_gap": 20}},
+     "stop": {"type": "block", "params": {}},
+     "exit": {"type": "slingshot", "params": {"breakeven_at_half": True, "max_bars": 60}},
+     "filters": []},
 ]
 
 

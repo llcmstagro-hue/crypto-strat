@@ -1,0 +1,1173 @@
+{
+  "tf": "1d",
+  "primary": "BTCUSDT",
+  "data_span": "2017-08-18..2026-07-28",
+  "spans": {
+    "BTCUSDT": [
+      "2017-08-18",
+      "2026-07-28",
+      3257
+    ],
+    "ETHUSDT": [
+      "2017-08-18",
+      "2026-07-28",
+      3258
+    ],
+    "SOLUSDT": [
+      "2020-08-12",
+      "2026-07-28",
+      2177
+    ],
+    "BNBUSDT": [
+      "2017-11-06",
+      "2026-07-28",
+      3179
+    ],
+    "DOGEUSDT": [
+      "2019-07-06",
+      "2026-07-28",
+      2578
+    ]
+  },
+  "has_volume": false,
+  "pool_size": 15,
+  "trials_total": 97612,
+  "trials_selection": 4886,
+  "kb_stats": {
+    "всего гипотез": 259,
+    "дошли до бэктеста": 239,
+    "отсеяны до бэктеста": 20,
+    "выжили": 0
+  },
+  "by_type": [
+    {
+      "тип": "breakout",
+      "всего": 47,
+      "тестировано": 40,
+      "выжило": 0,
+      "ср_барьеров": 4.42,
+      "ср_робастность": 0.74
+    },
+    {
+      "тип": "ensemble",
+      "всего": 23,
+      "тестировано": 11,
+      "выжило": 0,
+      "ср_барьеров": 4.36,
+      "ср_робастность": 0.637
+    },
+    {
+      "тип": "trend",
+      "всего": 10,
+      "тестировано": 10,
+      "выжило": 0,
+      "ср_барьеров": 4.2,
+      "ср_робастность": 0.623
+    },
+    {
+      "тип": "volatility",
+      "всего": 48,
+      "тестировано": 48,
+      "выжило": 0,
+      "ср_барьеров": 3.73,
+      "ср_робастность": 0.569
+    },
+    {
+      "тип": "cross-market",
+      "всего": 50,
+      "тестировано": 50,
+      "выжило": 0,
+      "ср_барьеров": 3.7,
+      "ср_робастность": 0.645
+    },
+    {
+      "тип": "SMC",
+      "всего": 34,
+      "тестировано": 34,
+      "выжило": 0,
+      "ср_барьеров": 3.03,
+      "ср_робастность": 0.486
+    },
+    {
+      "тип": "momentum",
+      "всего": 18,
+      "тестировано": 18,
+      "выжило": 0,
+      "ср_барьеров": 2.44,
+      "ср_робастность": 0.476
+    },
+    {
+      "тип": "pattern",
+      "всего": 5,
+      "тестировано": 4,
+      "выжило": 0,
+      "ср_барьеров": 2.0,
+      "ср_робастность": 0.3
+    },
+    {
+      "тип": "mean-reversion",
+      "всего": 24,
+      "тестировано": 24,
+      "выжило": 0,
+      "ср_барьеров": 1.29,
+      "ср_робастность": 0.246
+    }
+  ],
+  "failure_reasons": [
+    [
+      "5. Поправка на multiple testing",
+      238
+    ],
+    [
+      "1. Out-of-sample",
+      208
+    ],
+    [
+      "2. Walk-forward",
+      192
+    ],
+    [
+      "6. Стабильность параметров",
+      68
+    ],
+    [
+      "3. Кросс-инструмент",
+      68
+    ],
+    [
+      "7. Реалистичные издержки",
+      52
+    ],
+    [
+      "4. Минимум сделок",
+      30
+    ]
+  ],
+  "results": [
+    {
+      "name": "smith_trend_analysis_1d",
+      "type": "trend",
+      "score": 100,
+      "barriers": 6,
+      "robustness": 0.842,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 836,
+        "winrate": 0.3839712918660287,
+        "profit_factor": 1.7854302588344724,
+        "expectancy_R": 0.2361594142720832,
+        "sharpe_trade": 0.11853228902125673,
+        "total_R": 197.4292703314617,
+        "max_dd_R": 10.95062412693484,
+        "max_loss_streak": 16,
+        "profit_concentration": {
+          "top_share": 0.23077257950506386,
+          "median_R": -0.17545772913203622,
+          "max_R": 28.684537726237455,
+          "n": 836,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_trend_analysis_1d|swing_left=2,swing_left=2",
+        "entry": {
+          "type": "trend_swings",
+          "params": {
+            "swing_left": 2,
+            "swing_right": 1,
+            "buffer": 0.0002
+          }
+        },
+        "stop": {
+          "type": "structure",
+          "params": {
+            "lookback": 10,
+            "buffer": 0.0005
+          }
+        },
+        "exit": {
+          "type": "swing_structure",
+          "params": {
+            "swing_left": 2,
+            "swing_right": 1,
+            "stop_buffer": 0.0005
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_channel_55_20_bishop_1d",
+      "type": "breakout",
+      "score": 100,
+      "barriers": 5,
+      "robustness": 0.6948,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 273,
+        "winrate": 0.46153846153846156,
+        "profit_factor": 1.7109746401167092,
+        "expectancy_R": 0.23825690951266978,
+        "sharpe_trade": 0.15179418071398232,
+        "total_R": 65.04413629695888,
+        "max_dd_R": 12.088819263196847,
+        "max_loss_streak": 7,
+        "profit_concentration": {
+          "top_share": 0.23727474697058867,
+          "median_R": -0.06610190762551145,
+          "max_R": 13.917151519176821,
+          "n": 273,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_channel_55_20_bishop_1d|period=60,adx_level=40.0",
+        "entry": {
+          "type": "channel_stop",
+          "params": {
+            "period": 60,
+            "buffer": 0.0002
+          }
+        },
+        "stop": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "exit": {
+          "type": "bishop",
+          "params": {
+            "adx_period": 14,
+            "adx_level": 40.0
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_channel_55_20_adx_1d",
+      "type": "breakout",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.8135,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 217,
+        "winrate": 0.4377880184331797,
+        "profit_factor": 14.397645409840923,
+        "expectancy_R": 3.7006785960073696,
+        "sharpe_trade": 0.08702844125881021,
+        "total_R": 803.0472553335991,
+        "max_dd_R": 6.440366595168371,
+        "max_loss_streak": 7,
+        "profit_concentration": {
+          "top_share": 0.8635852683519418,
+          "median_R": -0.10667211158196627,
+          "max_R": 623.213489696296,
+          "n": 217,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_channel_55_20_adx_1d|period=60,period=10",
+        "entry": {
+          "type": "channel_stop",
+          "params": {
+            "period": 60,
+            "buffer": 0.0002
+          }
+        },
+        "stop": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "exit": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [
+          {
+            "type": "adx_rising",
+            "params": {
+              "period": 10
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_channel_55_20_cutoff_1d",
+      "type": "breakout",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.7927,
+      "regimes_ok": false,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 346,
+        "winrate": 0.2832369942196532,
+        "profit_factor": 15.550737704501607,
+        "expectancy_R": 2.3458500046682498,
+        "sharpe_trade": 0.06966368011880836,
+        "total_R": 811.6641016152142,
+        "max_dd_R": 4.248860785090187,
+        "max_loss_streak": 15,
+        "profit_concentration": {
+          "top_share": 0.8461632300116357,
+          "median_R": -0.0747702162031374,
+          "max_R": 623.2134896962959,
+          "n": 346,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_channel_55_20_cutoff_1d|flat_days=5,period=55",
+        "entry": {
+          "type": "channel_stop",
+          "params": {
+            "period": 55,
+            "buffer": 0.0002,
+            "cutoff": true,
+            "flat_days": 5
+          }
+        },
+        "stop": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "exit": {
+          "type": "channel",
+          "params": {
+            "period": 20,
+            "cutoff": true
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_channel_55_20_1d",
+      "type": "breakout",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.7835,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 229,
+        "winrate": 0.44541484716157204,
+        "profit_factor": 13.323927248519796,
+        "expectancy_R": 3.5213492421479446,
+        "sharpe_trade": 0.08506307137456269,
+        "total_R": 806.3889764518794,
+        "max_dd_R": 6.515581505428145,
+        "max_loss_streak": 7,
+        "profit_concentration": {
+          "top_share": 0.8548336555970802,
+          "median_R": -0.09819859285351128,
+          "max_R": 623.2134896962959,
+          "n": 229,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_channel_55_20_1d|period=60",
+        "entry": {
+          "type": "channel_stop",
+          "params": {
+            "period": 60,
+            "buffer": 0.0002
+          }
+        },
+        "stop": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "exit": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_channel_40_20_1d",
+      "type": "breakout",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.7013,
+      "regimes_ok": false,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 314,
+        "winrate": 0.4426751592356688,
+        "profit_factor": 10.498822916071301,
+        "expectancy_R": 2.7540900841277764,
+        "sharpe_trade": 0.07776621748507892,
+        "total_R": 864.7842864161217,
+        "max_dd_R": 6.358196892590172,
+        "max_loss_streak": 11,
+        "profit_concentration": {
+          "top_share": 0.7953002235358986,
+          "median_R": -0.14205999891048743,
+          "max_R": 623.213489696296,
+          "n": 314,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_channel_40_20_1d|period=30",
+        "entry": {
+          "type": "channel_stop",
+          "params": {
+            "period": 30,
+            "buffer": 0.0002
+          }
+        },
+        "stop": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "exit": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_slingshot_1d",
+      "type": "pattern",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.6751,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 225,
+        "winrate": 0.38222222222222224,
+        "profit_factor": 2.232091749366996,
+        "expectancy_R": 0.6947554628494533,
+        "sharpe_trade": 0.15854018140968004,
+        "total_R": 156.31997914112694,
+        "max_dd_R": 12.563888491950976,
+        "max_loss_streak": 10,
+        "profit_concentration": {
+          "top_share": 0.40354943034903573,
+          "median_R": -0.7633800028212838,
+          "max_R": 46.91570367630269,
+          "n": 225,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_slingshot_1d|max_gap=20,min_gap=5",
+        "entry": {
+          "type": "slingshot",
+          "params": {
+            "swing_left": 2,
+            "swing_right": 2,
+            "min_gap": 5,
+            "max_gap": 20,
+            "max_age": 20
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "bishop",
+          "params": {
+            "adx_period": 14,
+            "adx_level": 40.0
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [
+          {
+            "type": "adx_rising",
+            "params": {
+              "period": 14
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_channel_20_20_1d",
+      "type": "breakout",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.656,
+      "regimes_ok": false,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 326,
+        "winrate": 0.4447852760736196,
+        "profit_factor": 10.266847333229702,
+        "expectancy_R": 2.7356768267459706,
+        "sharpe_trade": 0.07862827508371852,
+        "total_R": 891.8306455191865,
+        "max_dd_R": 8.250726992882363,
+        "max_loss_streak": 15,
+        "profit_concentration": {
+          "top_share": 0.7796601835440635,
+          "median_R": -0.13837369189762272,
+          "max_R": 623.213489696296,
+          "n": 326,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_channel_20_20_1d|period=25",
+        "entry": {
+          "type": "channel_stop",
+          "params": {
+            "period": 25,
+            "buffer": 0.0002
+          }
+        },
+        "stop": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "exit": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_trend_analysis_adx_1d",
+      "type": "trend",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.6076,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 493,
+        "winrate": 0.38742393509127787,
+        "profit_factor": 1.7243438694015383,
+        "expectancy_R": 0.2302392456549183,
+        "sharpe_trade": 0.11713258074403508,
+        "total_R": 113.50794810787471,
+        "max_dd_R": 12.394184693450995,
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.2811833900634183,
+          "median_R": -0.17085055244138533,
+          "max_R": 22.43883925292625,
+          "n": 493,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_trend_analysis_adx_1d|swing_left=2,period=20",
+        "entry": {
+          "type": "trend_swings",
+          "params": {
+            "swing_left": 2,
+            "swing_right": 1,
+            "buffer": 0.0002
+          }
+        },
+        "stop": {
+          "type": "structure",
+          "params": {
+            "lookback": 10,
+            "buffer": 0.0005
+          }
+        },
+        "exit": {
+          "type": "swing_structure",
+          "params": {
+            "swing_left": 3,
+            "swing_right": 1,
+            "stop_buffer": 0.0005
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [
+          {
+            "type": "adx_rising",
+            "params": {
+              "period": 20
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_trend_analysis_bishop_1d",
+      "type": "trend",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.5404,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 202,
+        "winrate": 0.3118811881188119,
+        "profit_factor": 4.526296669578937,
+        "expectancy_R": 2.15330670850294,
+        "sharpe_trade": 0.163156195434911,
+        "total_R": 434.9679551175937,
+        "max_dd_R": 23.207113140434217,
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.6228506591425205,
+          "median_R": -0.867149299832862,
+          "max_R": 135.37208545558855,
+          "n": 202,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_trend_analysis_bishop_1d|swing_left=4,adx_level=50.0",
+        "entry": {
+          "type": "trend_swings",
+          "params": {
+            "swing_left": 4,
+            "swing_right": 1,
+            "buffer": 0.0002
+          }
+        },
+        "stop": {
+          "type": "structure",
+          "params": {
+            "lookback": 10,
+            "buffer": 0.0005
+          }
+        },
+        "exit": {
+          "type": "bishop",
+          "params": {
+            "adx_period": 14,
+            "adx_level": 50.0
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_stochastic_50_1d",
+      "type": "trend",
+      "score": 100,
+      "barriers": 3,
+      "robustness": 0.5668,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 399,
+        "winrate": 0.3333333333333333,
+        "profit_factor": 1.8936249017656999,
+        "expectancy_R": 0.5449212273239601,
+        "sharpe_trade": 0.1433508225491312,
+        "total_R": 217.42356970226012,
+        "max_dd_R": 12.656594891493086,
+        "max_loss_streak": 9,
+        "profit_concentration": {
+          "top_share": 0.29231830356585436,
+          "median_R": -0.9574572754095751,
+          "max_R": 39.88697385290984,
+          "n": 399,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "smith_stochastic_50_1d|k_period=14,mult=1.5",
+        "entry": {
+          "type": "stoch_cross50",
+          "params": {
+            "k_period": 14,
+            "k_smooth": 3
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 1.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 120
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_inside_day_1d",
+      "type": "pattern",
+      "score": 100,
+      "barriers": 2,
+      "robustness": 0.4624,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 2520,
+        "winrate": 0.48968253968253966,
+        "profit_factor": 1.18973358903478,
+        "expectancy_R": 0.05085864863166191,
+        "sharpe_trade": 0.06099730157833309,
+        "total_R": 128.163794551788,
+        "max_dd_R": 32.542941224273704,
+        "max_loss_streak": 10,
+        "profit_concentration": {
+          "top_share": 0.03418444827406923,
+          "median_R": -0.016826210965952312,
+          "max_R": 6.019443982390518,
+          "n": 2520,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "smith_inside_day_1d|stop_buffer=0.005",
+        "entry": {
+          "type": "inside_day",
+          "params": {
+            "buffer": 0.0002,
+            "stop_buffer": 0.005
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "time",
+          "params": {
+            "bars": 0
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_mini_slingshot_1d",
+      "type": "pattern",
+      "score": 100,
+      "barriers": 1,
+      "robustness": 0.0605,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 729,
+        "winrate": 0.35939643347050754,
+        "profit_factor": 0.8035395593720399,
+        "expectancy_R": -0.06310543546134083,
+        "sharpe_trade": -0.08550608698394518,
+        "total_R": -46.003862451317474,
+        "max_dd_R": 58.029302523222135,
+        "max_loss_streak": 19,
+        "profit_concentration": {
+          "top_share": 0.027901266676321007,
+          "median_R": -0.02864595168622248,
+          "max_R": 1.073352645699679,
+          "n": 729,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "smith_mini_slingshot_1d|max_age=20,min_gap=2",
+        "entry": {
+          "type": "slingshot",
+          "params": {
+            "swing_left": 2,
+            "swing_right": 2,
+            "mini": true,
+            "min_gap": 2,
+            "max_age": 20
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "slingshot",
+          "params": {
+            "breakeven_at_half": true,
+            "max_bars": 60
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    },
+    {
+      "name": "smith_reversal_day_1d",
+      "type": "pattern",
+      "score": 100,
+      "barriers": 1,
+      "robustness": 0.0036,
+      "regimes_ok": true,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 3016,
+        "winrate": 0.40086206896551724,
+        "profit_factor": 0.8159799965227984,
+        "expectancy_R": -0.06760212757336564,
+        "sharpe_trade": -0.07141357823337062,
+        "total_R": -203.8880167612713,
+        "max_dd_R": 220.55522014117278,
+        "max_loss_streak": 21,
+        "profit_concentration": {
+          "top_share": 0.04794841678321794,
+          "median_R": -0.1584762567837878,
+          "max_R": 14.668239376440384,
+          "n": 3016,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "smith_reversal_day_1d|stop_buffer=0.0005",
+        "entry": {
+          "type": "reversal_day",
+          "params": {
+            "stop_buffer": 0.0005
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "time",
+          "params": {
+            "bars": 0
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith"
+        }
+      }
+    }
+  ],
+  "elapsed_min": 0.4
+}
