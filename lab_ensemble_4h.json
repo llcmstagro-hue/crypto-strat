@@ -1,0 +1,1236 @@
+{
+  "tf": "4h",
+  "primary": "BTCUSDT",
+  "data_span": "2017-08-17..2026-07-29",
+  "spans": {
+    "BTCUSDT": [
+      "2017-08-17",
+      "2026-07-29",
+      19593
+    ],
+    "ETHUSDT": [
+      "2017-08-17",
+      "2026-07-29",
+      19596
+    ],
+    "SOLUSDT": [
+      "2020-08-11",
+      "2026-07-29",
+      13070
+    ],
+    "BNBUSDT": [
+      "2017-11-06",
+      "2026-07-29",
+      19112
+    ],
+    "DOGEUSDT": [
+      "2019-07-05",
+      "2026-07-29",
+      15484
+    ]
+  },
+  "has_volume": false,
+  "pool_size": 36,
+  "trials_total": 94906,
+  "trials_selection": 4685,
+  "kb_stats": {
+    "всего гипотез": 240,
+    "дошли до бэктеста": 221,
+    "отсеяны до бэктеста": 19,
+    "выжили": 0
+  },
+  "by_type": [
+    {
+      "тип": "breakout",
+      "всего": 41,
+      "тестировано": 34,
+      "выжило": 0,
+      "ср_барьеров": 4.47,
+      "ср_робастность": 0.74
+    },
+    {
+      "тип": "ensemble",
+      "всего": 23,
+      "тестировано": 11,
+      "выжило": 0,
+      "ср_барьеров": 4.36,
+      "ср_робастность": 0.637
+    },
+    {
+      "тип": "trend",
+      "всего": 2,
+      "тестировано": 2,
+      "выжило": 0,
+      "ср_барьеров": 4.0,
+      "ср_робастность": 0.542
+    },
+    {
+      "тип": "volatility",
+      "всего": 48,
+      "тестировано": 48,
+      "выжило": 0,
+      "ср_барьеров": 3.73,
+      "ср_робастность": 0.569
+    },
+    {
+      "тип": "cross-market",
+      "всего": 50,
+      "тестировано": 50,
+      "выжило": 0,
+      "ср_барьеров": 3.7,
+      "ср_робастность": 0.645
+    },
+    {
+      "тип": "SMC",
+      "всего": 34,
+      "тестировано": 34,
+      "выжило": 0,
+      "ср_барьеров": 3.03,
+      "ср_робастность": 0.486
+    },
+    {
+      "тип": "momentum",
+      "всего": 18,
+      "тестировано": 18,
+      "выжило": 0,
+      "ср_барьеров": 2.44,
+      "ср_робастность": 0.476
+    },
+    {
+      "тип": "mean-reversion",
+      "всего": 24,
+      "тестировано": 24,
+      "выжило": 0,
+      "ср_барьеров": 1.29,
+      "ср_робастность": 0.246
+    }
+  ],
+  "failure_reasons": [
+    [
+      "5. Поправка на multiple testing",
+      220
+    ],
+    [
+      "1. Out-of-sample",
+      191
+    ],
+    [
+      "2. Walk-forward",
+      178
+    ],
+    [
+      "3. Кросс-инструмент",
+      66
+    ],
+    [
+      "6. Стабильность параметров",
+      64
+    ],
+    [
+      "7. Реалистичные издержки",
+      48
+    ],
+    [
+      "4. Минимум сделок",
+      30
+    ]
+  ],
+  "results": [
+    {
+      "name": "ens_keltner_x_nr_btcfilter",
+      "type": "ensemble",
+      "score": 89,
+      "barriers": 6,
+      "robustness": 0.8469,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1258,
+        "winrate": 0.3696343402225755,
+        "profit_factor": 1.484145366264247,
+        "expectancy_R": 0.2343218855969236,
+        "sharpe_trade": 0.11400861071623157,
+        "total_R": 294.77693208092995,
+        "max_dd_R": 16.73490244078306,
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.09188206320505646,
+          "median_R": -0.4433437548866096,
+          "max_R": 24.748701639844796,
+          "n": 1258,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_keltner_x_nr_btcfilter|window=12,ema_period=50,mult=2.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "keltner_breakout",
+                "params": {}
+              },
+              {
+                "type": "nr_expansion",
+                "params": {}
+              }
+            ],
+            "window": 12,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "ref_trend",
+            "params": {
+              "ref": "BTCUSDT",
+              "ema_period": 50
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_2of3_breakouts_nr",
+      "type": "ensemble",
+      "score": 100,
+      "barriers": 6,
+      "robustness": 0.78,
+      "regimes_ok": true,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1962,
+        "winrate": 0.3613659531090724,
+        "profit_factor": 1.445621961782193,
+        "expectancy_R": 0.21958586596136467,
+        "sharpe_trade": 0.1004677599743739,
+        "total_R": 430.8274690161981,
+        "max_dd_R": 31.30992074140846,
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.08129298169955897,
+          "median_R": -0.48701016897927446,
+          "max_R": 26.625737196859827,
+          "n": 1962,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_2of3_breakouts_nr|window=3,mult=2.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "donchian_breakout",
+                "params": {}
+              },
+              {
+                "type": "keltner_breakout",
+                "params": {}
+              },
+              {
+                "type": "nr_expansion",
+                "params": {}
+              }
+            ],
+            "window": 3,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_keltner_x_nr",
+      "type": "ensemble",
+      "score": 100,
+      "barriers": 5,
+      "robustness": 0.7487,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1572,
+        "winrate": 0.37404580152671757,
+        "profit_factor": 1.5012835060041883,
+        "expectancy_R": 0.24195592181240616,
+        "sharpe_trade": 0.11761915057374894,
+        "total_R": 380.35470908910196,
+        "max_dd_R": 20.648098736481643,
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.07960185604857803,
+          "median_R": -0.4322582175803088,
+          "max_R": 24.748701639844793,
+          "n": 1572,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_keltner_x_nr|window=6,mult=2.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "keltner_breakout",
+                "params": {}
+              },
+              {
+                "type": "nr_expansion",
+                "params": {}
+              }
+            ],
+            "window": 6,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_2of3_price_vol_xmkt",
+      "type": "ensemble",
+      "score": 92,
+      "barriers": 4,
+      "robustness": 0.6874,
+      "regimes_ok": true,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1432,
+        "winrate": 0.3645251396648045,
+        "profit_factor": 1.3907253529192538,
+        "expectancy_R": 0.19134798854799934,
+        "sharpe_trade": 0.09638688299756076,
+        "total_R": 274.0103196007351,
+        "max_dd_R": 22.695086429616197,
+        "max_loss_streak": 17,
+        "profit_concentration": {
+          "top_share": 0.0857280884125385,
+          "median_R": -0.46406647213794905,
+          "max_R": 24.748701639844796,
+          "n": 1432,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_2of3_price_vol_xmkt|window=12,mult=2.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "donchian_breakout",
+                "params": {}
+              },
+              {
+                "type": "squeeze_breakout",
+                "params": {}
+              },
+              {
+                "type": "ref_momentum",
+                "params": {}
+              }
+            ],
+            "window": 12,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_donchian_x_nr",
+      "type": "ensemble",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.6443,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1343,
+        "winrate": 0.3469843633655994,
+        "profit_factor": 1.2961553698418726,
+        "expectancy_R": 0.15119566808895005,
+        "sharpe_trade": 0.07273611417991027,
+        "total_R": 203.05578224345973,
+        "max_dd_R": 29.66307920626832,
+        "max_loss_streak": 14,
+        "profit_concentration": {
+          "top_share": 0.106860115481008,
+          "median_R": -0.5260079765612717,
+          "max_R": 24.748701639844793,
+          "n": 1343,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_donchian_x_nr|window=3,mult=2.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "donchian_breakout",
+                "params": {}
+              },
+              {
+                "type": "nr_expansion",
+                "params": {}
+              }
+            ],
+            "window": 3,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_donchian_x_btcmom",
+      "type": "ensemble",
+      "score": 92,
+      "barriers": 4,
+      "robustness": 0.5932,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1224,
+        "winrate": 0.2818627450980392,
+        "profit_factor": 1.205495725908659,
+        "expectancy_R": 0.14472300570503752,
+        "sharpe_trade": 0.053105817280990675,
+        "total_R": 177.140958982966,
+        "max_dd_R": 53.28541608600034,
+        "max_loss_streak": 16,
+        "profit_concentration": {
+          "top_share": 0.10578970441303688,
+          "median_R": -1.0407203635522193,
+          "max_R": 31.70215464989069,
+          "n": 1224,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_donchian_x_btcmom|window=3,mult=1.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "donchian_breakout",
+                "params": {}
+              },
+              {
+                "type": "ref_momentum",
+                "params": {}
+              }
+            ],
+            "window": 3,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 1.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_donchian_x_squeeze",
+      "type": "ensemble",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.5833,
+      "regimes_ok": true,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 914,
+        "winrate": 0.3402625820568928,
+        "profit_factor": 1.3590122925941543,
+        "expectancy_R": 0.18969430169634888,
+        "sharpe_trade": 0.08285418824831138,
+        "total_R": 173.38059175046286,
+        "max_dd_R": 23.634350017127247,
+        "max_loss_streak": 17,
+        "profit_concentration": {
+          "top_share": 0.1395479449645382,
+          "median_R": -0.555277238944414,
+          "max_R": 26.852735992525208,
+          "n": 914,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_donchian_x_squeeze|window=12,mult=2.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "donchian_breakout",
+                "params": {}
+              },
+              {
+                "type": "squeeze_breakout",
+                "params": {}
+              }
+            ],
+            "window": 12,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_nr_x_btcmom",
+      "type": "ensemble",
+      "score": 92,
+      "barriers": 4,
+      "robustness": 0.5636,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1621,
+        "winrate": 0.33189389265885255,
+        "profit_factor": 1.1743866821439415,
+        "expectancy_R": 0.10010669291924199,
+        "sharpe_trade": 0.050145300666569,
+        "total_R": 162.27294922209143,
+        "max_dd_R": 41.8043166072801,
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.069756018563865,
+          "median_R": -0.7135069399147655,
+          "max_R": 23.776615987418104,
+          "n": 1621,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_nr_x_btcmom|window=12,mult=2.0",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "nr_expansion",
+                "params": {}
+              },
+              {
+                "type": "ref_momentum",
+                "params": {}
+              }
+            ],
+            "window": 12,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.0
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_donchian_x_squeeze_btcfilter",
+      "type": "ensemble",
+      "score": 89,
+      "barriers": 4,
+      "robustness": 0.5546,
+      "regimes_ok": true,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 624,
+        "winrate": 0.34134615384615385,
+        "profit_factor": 1.4229908186990823,
+        "expectancy_R": 0.22485520707211784,
+        "sharpe_trade": 0.09842474514569967,
+        "total_R": 140.3096492130015,
+        "max_dd_R": 27.00939840429902,
+        "max_loss_streak": 15,
+        "profit_concentration": {
+          "top_share": 0.1559422460024799,
+          "median_R": -0.5641961476595566,
+          "max_R": 24.74870163984479,
+          "n": 624,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_donchian_x_squeeze_btcfilter|window=12,ema_period=50,mult=2.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "donchian_breakout",
+                "params": {}
+              },
+              {
+                "type": "squeeze_breakout",
+                "params": {}
+              }
+            ],
+            "window": 12,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "ref_trend",
+            "params": {
+              "ref": "BTCUSDT",
+              "ema_period": 50
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_keltner_in_squeeze_regime",
+      "type": "breakout",
+      "score": 97,
+      "barriers": 4,
+      "robustness": 0.5482,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 808,
+        "winrate": 0.31064356435643564,
+        "profit_factor": 1.4850113623210237,
+        "expectancy_R": 0.33096034298451255,
+        "sharpe_trade": 0.11452769025289593,
+        "total_R": 267.41595713148604,
+        "max_dd_R": 39.75078106870674,
+        "max_loss_streak": 20,
+        "profit_concentration": {
+          "top_share": 0.11525518775853329,
+          "median_R": -1.0492769296203996,
+          "max_R": 20.869420660121442,
+          "n": 808,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_keltner_in_squeeze_regime|mult=1.5,pct=0.2,mult=1.5",
+        "entry": {
+          "type": "keltner_breakout",
+          "params": {
+            "ema_period": 20,
+            "atr_period": 14,
+            "mult": 1.5
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 1.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "squeeze",
+            "params": {
+              "period": 20,
+              "lookback": 120,
+              "pct": 0.2,
+              "squeezed": true
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_donchian_squeeze_htf",
+      "type": "ensemble",
+      "score": 97,
+      "barriers": 4,
+      "robustness": 0.5289,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 536,
+        "winrate": 0.3805970149253731,
+        "profit_factor": 1.7750788021698176,
+        "expectancy_R": 0.38435478502976594,
+        "sharpe_trade": 0.15627995470537567,
+        "total_R": 206.01416477595464,
+        "max_dd_R": 17.035765292997795,
+        "max_loss_streak": 11,
+        "profit_concentration": {
+          "top_share": 0.16148938189815878,
+          "median_R": -0.4554239134673026,
+          "max_R": 24.74870163984479,
+          "n": 536,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_donchian_squeeze_htf|window=12,ema_period=50,mult=2.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "donchian_breakout",
+                "params": {}
+              },
+              {
+                "type": "squeeze_breakout",
+                "params": {}
+              }
+            ],
+            "window": 12,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "htf_trend",
+            "params": {
+              "factor": 6,
+              "ema_period": 50
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_donchian_in_squeeze_regime",
+      "type": "breakout",
+      "score": 97,
+      "barriers": 3,
+      "robustness": 0.5479,
+      "regimes_ok": false,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 237,
+        "winrate": 0.35864978902953587,
+        "profit_factor": 1.444576918298713,
+        "expectancy_R": 0.2299881858169123,
+        "sharpe_trade": 0.11688147380799545,
+        "total_R": 54.507200038608254,
+        "max_dd_R": 15.543960559568825,
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.22970705561403554,
+          "median_R": -0.5618218504824988,
+          "max_R": 11.289426642851149,
+          "n": 237,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_donchian_in_squeeze_regime|period=55,pct=0.2,mult=2.5",
+        "entry": {
+          "type": "donchian_breakout",
+          "params": {
+            "period": 55
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "squeeze",
+            "params": {
+              "period": 20,
+              "lookback": 120,
+              "pct": 0.2,
+              "squeezed": true
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    },
+    {
+      "name": "ens_squeeze_x_btcmom",
+      "type": "ensemble",
+      "score": 92,
+      "barriers": 3,
+      "robustness": 0.48,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 401,
+        "winrate": 0.2743142144638404,
+        "profit_factor": 1.2295267404268315,
+        "expectancy_R": 0.16344080303607159,
+        "sharpe_trade": 0.0628644410871214,
+        "total_R": 65.53976201746465,
+        "max_dd_R": 47.2708944422282,
+        "max_loss_streak": 21,
+        "profit_concentration": {
+          "top_share": 0.2009022364753375,
+          "median_R": -1.0493506097753342,
+          "max_R": 17.508765527283796,
+          "n": 401,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "ens_squeeze_x_btcmom|window=3,mult=1.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "squeeze_breakout",
+                "params": {}
+              },
+              {
+                "type": "ref_momentum",
+                "params": {}
+              }
+            ],
+            "window": 3,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 1.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия"
+        }
+      }
+    }
+  ],
+  "elapsed_min": 4.9
+}

@@ -526,9 +526,77 @@ def filter_ref_trend(df: pd.DataFrame, p: dict):
     return up, dn
 
 
+def entry_consensus(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """СОГЛАСИЕ нескольких механизмов разной природы.
+
+    Вход только когда независимые сигналы совпали по направлению в пределах
+    окна `window` баров. Это НЕ «навесить фильтров, пока метрика не улучшится»:
+    компоненты — полноценные самостоятельные механизмы, каждый со своей
+    рыночной логикой, и каждый проверен поодиночке в предыдущих прогонах.
+
+    Гипотеза комбинирования: одиночный сигнал несёт и эдж, и шум; шум у
+    механизмов РАЗНОЙ природы некоррелирован, а эдж — если он общий — нет.
+    Тогда пересечение режет шум сильнее, чем эдж.
+
+    Причинность: компонент сигналит на закрытии своего бара, согласие
+    фиксируется на баре последнего подтвердившего, вход — не раньше следующего.
+    Ни один компонент не может «дождаться» будущего.
+
+    Сигнал возникает только в момент ВОЗНИКНОВЕНИЯ согласия. Пока согласие
+    держится, новых входов нет — иначе одно событие плодило бы серию заявок.
+    """
+    comps = p.get("components") or []
+    if len(comps) < 2:
+        raise ValueError("consensus требует минимум 2 компонента")
+    window = int(p.get("window", 6))
+    need = int(p.get("min_agree", len(comps)))
+    n = len(df)
+
+    # для каждого компонента — бар последнего сигнала по каждому направлению
+    last_sig = np.full((len(comps), 2, n), -10**9, dtype=np.int64)   # [comp][dir][bar]
+    for ci, spec in enumerate(comps):
+        fn = ENTRY_BLOCKS.get(spec["type"])
+        if fn is None:
+            raise ValueError(f"неизвестный компонент согласия: {spec['type']}")
+        for di in (0, 1):
+            last_sig[ci, di, :] = -10**9
+        cur = [-10**9, -10**9]
+        marks = {0: [], 1: []}
+        for it in fn(df, spec.get("params", {})):
+            marks[0 if it.direction > 0 else 1].append(it.signal_bar)
+        for di in (0, 1):
+            arr = np.full(n, -10**9, dtype=np.int64)
+            last = -10**9
+            ptr, ms = 0, sorted(marks[di])
+            for i in range(n):
+                while ptr < len(ms) and ms[ptr] <= i:
+                    last = ms[ptr]; ptr += 1
+                arr[i] = last
+            last_sig[ci, di, :] = arr
+
+    intents, active = [], 0
+    for i in range(n):
+        fired = 0
+        for di, d in ((0, +1), (1, -1)):
+            agree = int((i - last_sig[:, di, i] < window).sum())
+            if agree >= need:
+                if active != d:
+                    intents.append(OrderIntent(
+                        d, i, "market", None, {"type": "none"}, 1,
+                        meta={"block": "consensus", "agree": agree,
+                              "components": [c["type"] for c in comps]}))
+                    active = d
+                fired = d
+                break
+        if not fired:
+            active = 0
+    return sorted(intents, key=lambda x: x.signal_bar)
+
+
 ENTRY_BLOCKS = {
     "order_block": entry_order_block,
     "rsi_threshold": entry_rsi_threshold,
+    "consensus": entry_consensus,
     "squeeze_breakout": entry_squeeze_breakout,
     "ttm_squeeze": entry_ttm_squeeze,
     "nr_expansion": entry_nr_expansion,
@@ -632,10 +700,37 @@ def filter_ma_side(df: pd.DataFrame, p: dict):
     return ok & (c > ma), ok & (c < ma)
 
 
+def filter_squeeze(df: pd.DataFrame, p: dict):
+    """Режим волатильности как УСЛОВИЕ: рынок сжат (или, наоборот, разжат).
+
+    Тот же измеритель, что в `squeeze_breakout`, но в роли разрешения, а не
+    сигнала. Нужно для ансамблей: «пробой засчитываем только если он случился
+    из сжатия» — это пересечение двух независимых механизмов, а не два подряд
+    приложенных фильтра одной природы.
+    """
+    _, h, l, c = _arrays(df)
+    period = int(p.get("period", 20))
+    k = float(p.get("k", 2.0))
+    lookback = int(p.get("lookback", 120))
+    pct = float(p.get("pct", 0.30))
+    want_squeezed = bool(p.get("squeezed", True))
+
+    s = pd.Series(c)
+    mid = s.rolling(period, min_periods=period).mean()
+    sd = s.rolling(period, min_periods=period).std(ddof=0)
+    width = (2 * k * sd / mid).to_numpy()
+    thr = pd.Series(width).shift(1).rolling(lookback, min_periods=lookback) \
+            .quantile(pct).to_numpy()
+    ok = ~(np.isnan(width) | np.isnan(thr))
+    m = ok & ((width <= thr) if want_squeezed else (width > thr))
+    return m, m
+
+
 FILTER_BLOCKS = {
     "htf_trend": filter_htf_trend,
     "ma_side": filter_ma_side,
     "ref_trend": filter_ref_trend,
+    "squeeze": filter_squeeze,
     "session": filter_session,
     "atr_regime": filter_atr_regime,
     "volume": filter_volume,

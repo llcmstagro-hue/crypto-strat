@@ -45,9 +45,15 @@ BLOCK_TYPE = {
 
 
 def classify_with_filters(cfg) -> str:
-    """Тип по входному блоку, но межрыночный ФИЛЬТР перевешивает: стратегия,
-    берущая пробой альта только по тренду BTC, — это межрыночная идея, а не
-    просто пробой."""
+    """Тип стратегии.
+
+    Согласие механизмов — отдельный класс: у него своя природа риска, и
+    смешивать его в статистике с одиночным пробоем нельзя. Межрыночный ФИЛЬТР
+    перевешивает входной блок: пробой альта, взятый только по тренду BTC, —
+    это межрыночная идея, а не просто пробой.
+    """
+    if cfg.entry["type"] == "consensus":
+        return "ensemble"
     base = BLOCK_TYPE.get(cfg.entry["type"], "other")
     if any(f["type"] == "ref_trend" for f in cfg.filters):
         return "cross-market" if base != "cross-market" else base
@@ -70,6 +76,45 @@ class Idea:
     rationale: str = ""            # рыночная логика: ПОЧЕМУ это должно работать
     sources: list = field(default_factory=list)
     cross_market: bool = False     # механизм не завязан на конкретный рынок
+    # Для ансамблей: логика КАЖДОГО компонента, объявленная ДО теста.
+    # Комбинация «потому что вместе дают PF» без объяснения почему — отсев.
+    component_logic: dict = field(default_factory=dict)
+
+
+# Фильтры, которые несут САМОСТОЯТЕЛЬНЫЙ рыночный механизм и потому считаются
+# сигналом в лимите сложности. Технические ограничители (session) не считаются.
+MECHANISM_FILTERS = {"htf_trend", "ref_trend", "squeeze", "ma_side",
+                     "ema_slope", "atr_regime", "rsi_bound", "volume"}
+
+MAX_SIGNALS = 3
+
+
+def count_signals(cfg: StrategyConfig) -> int:
+    """Сколько НЕЗАВИСИМЫХ механизмов участвует во входе.
+
+    Считаются компоненты согласия плюс фильтры, несущие собственный механизм.
+    Это и есть «сложность комбинации» в смысле лимита: три механизма — потолок,
+    дальше начинается вырезание удачного подмножества, что мы уже наблюдали
+    на подгонке C2 в калибровке (шесть фильтров -> 30 сделок).
+    """
+    entry = cfg.entry
+    if entry["type"] == "consensus":
+        n = len(entry.get("params", {}).get("components", []))
+    else:
+        n = 1
+    n += sum(1 for f in cfg.filters if f["type"] in MECHANISM_FILTERS)
+    return n
+
+
+def component_types(cfg: StrategyConfig) -> list[str]:
+    """Имена всех участвующих механизмов — для проверки объявленной логики."""
+    out = []
+    if cfg.entry["type"] == "consensus":
+        out += [c["type"] for c in cfg.entry.get("params", {}).get("components", [])]
+    else:
+        out.append(cfg.entry["type"])
+    out += [f["type"] for f in cfg.filters if f["type"] in MECHANISM_FILTERS]
+    return out
 
 
 def research_score(cfg: StrategyConfig, idea: Idea, grid: dict,
@@ -78,8 +123,15 @@ def research_score(cfg: StrategyConfig, idea: Idea, grid: dict,
     b: dict[str, int] = {}
 
     # понятная рыночная логика — 20
+    # для ансамбля мало общей фразы: логика нужна у КАЖДОГО компонента
     r = (idea.rationale or "").strip()
-    b["рыночная логика"] = 20 if len(r) >= 80 else (12 if len(r) >= 30 else 0)
+    base = 20 if len(r) >= 80 else (12 if len(r) >= 30 else 0)
+    comps = component_types(cfg)
+    if len(comps) > 1:
+        have = sum(1 for c in comps
+                   if len((idea.component_logic.get(c, "") or "").strip()) >= 40)
+        base = int(base * have / len(comps))
+    b["рыночная логика"] = base
 
     # формализуется без двусмысленностей — 15
     # конфиг собран из блоков и исполняется движком, значит формализован
@@ -156,6 +208,24 @@ def critic(cfg: StrategyConfig, grid: dict, idea: Idea, *,
     if not has_volume and (used_filters & VOLUME_BLOCKS):
         obj.append("использует объёмный фильтр, а в данных объёма нет")
         hard = True
+
+    # ЖЁСТКИЙ ЛИМИТ СЛОЖНОСТИ КОМБИНАЦИИ — автоотсев независимо от метрик
+    n_sig = count_signals(cfg)
+    if n_sig > MAX_SIGNALS:
+        obj.append(f"{n_sig} независимых сигналов (>{MAX_SIGNALS}) — "
+                   f"комбинация такой ширины вырезает удачное подмножество, "
+                   f"а не пересекает механизмы; отсев независимо от метрик")
+        hard = True
+
+    # у КАЖДОГО компонента обязана быть рыночная логика, объявленная ДО теста
+    comps = component_types(cfg)
+    if len(comps) > 1:
+        missing = [c for c in comps
+                   if not (idea.component_logic.get(c, "") or "").strip()]
+        if missing:
+            obj.append(f"нет объявленной логики у компонентов: {', '.join(missing)}. "
+                       f"Комбинация «вместе дают PF» без объяснения почему — отсев")
+            hard = True
 
     # много правил на выборке — прямой красный флаг р.4
     if cfg.n_rules() > 6:

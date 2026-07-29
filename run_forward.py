@@ -25,13 +25,14 @@ import os
 import sqlite3
 import sys
 
+import numpy as np
 import pandas as pd
 
 from crypto_strat.data.loader import load_basket
 from crypto_strat.engine.config import StrategyConfig
 from crypto_strat.engine.metrics import trade_metrics
 from crypto_strat.forward.monitor import (FrozenStrategy, evaluate, format_status,
-                                          monte_carlo_baseline)
+                                          monte_carlo_baseline, thresholds_at)
 from crypto_strat.validation.barriers import run_symbols, pooled_R
 
 STORE = "./forward"
@@ -119,6 +120,83 @@ def cmd_status(args) -> int:
     return 0
 
 
+def cmd_replay(args) -> int:
+    """Проверка САМОГО МОНИТОРА на истории.
+
+    Замораживаем стратегию задним числом на дату `--as-of`, считаем baseline и
+    пороги Монте-Карло ТОЛЬКО по данным до неё, затем «наблюдаем» всё, что было
+    после. Это бэктест МОНИТОРА, а не стратегии: он отвечает на вопрос
+    «сработали бы жёлтый и красный триггеры там, где эдж действительно затухал».
+
+    Без такой проверки монитор — необоснованный код: пороги посчитаны, но
+    неизвестно, ловят ли они то, ради чего заведены.
+    """
+    cfg_dict, kb = _load_config_from_kb(args.db, args.name, args.tf)
+    cfg = StrategyConfig.from_dict(cfg_dict)
+    dataset = load_basket(args.data, tf=args.tf)
+    cut = pd.Timestamp(args.as_of, tz="UTC").value // 10**6
+
+    results = run_symbols(dataset, cfg, list(dataset))
+    allt = pd.concat([r.trades for r in results if r.n_trades]).sort_values("entry_ts")
+    before = allt[allt.entry_ts < cut]
+    after = allt[allt.entry_ts >= cut]
+    if len(before) < 50 or len(after) < 10:
+        raise SystemExit(f"мало сделок для реплея: до {len(before)}, после {len(after)}")
+
+    base = trade_metrics(before["R"].to_numpy())
+    mc = monte_carlo_baseline(before["R"].to_numpy(), horizon=min(len(after), 300))
+    frozen = FrozenStrategy(
+        name=f"{args.name} [РЕПЛЕЙ as-of {args.as_of}]", config=cfg.to_dict(),
+        tf=args.tf, symbols=list(dataset), frozen_data_end=args.as_of,
+        why_watching="проверка монитора на истории: поймал бы он затухание?",
+        baseline={k: base[k] for k in ("n_trades", "winrate", "profit_factor",
+                                       "expectancy_R", "sharpe_trade",
+                                       "max_dd_R", "max_loss_streak")},
+        monte_carlo=mc)
+
+    print(format_status(frozen, evaluate(frozen, after)))
+
+    # когда именно загорелся бы каждый уровень
+    R = after["R"].to_numpy()
+    eq = np.cumsum(R)
+    dd = np.maximum.accumulate(eq) - eq
+    ts = after["entry_dt"].to_numpy()
+    # Порог на сделке #k берётся ДЛЯ k сделок, а не фиксированный: иначе
+    # ранние сделки судятся по слишком мягкой планке, поздние — по слишком
+    # жёсткой, и момент срабатывания получается фиктивным.
+    print("\n  КОГДА СРАБОТАЛИ БЫ ТРИГГЕРЫ (плоский порог на весь горизонт):")
+    ty, tr = thresholds_at(mc, len(R))
+    thr_y = np.full(len(R), ty); thr_r = np.full(len(R), tr)
+    for lvl, thr in (("🟡 жёлтый", thr_y), ("🔴 красный", thr_r)):
+        hit = int(np.argmax(dd >= thr)) if (dd >= thr).any() else None
+        if hit is None:
+            print(f"     {lvl}: не сработал за весь период наблюдения")
+        else:
+            print(f"     {lvl}: сделка #{hit+1} из {len(R)}, "
+                  f"{pd.Timestamp(ts[hit]).date()} "
+                  f"(просадка {dd[hit]:.1f}R при пороге {thr[hit]:.1f}R)")
+
+    # катящееся ожидание — против КАЛИБРОВАННОГО порога, а не против нуля
+    rl = mc.get("rolling", {})
+    w = mc.get("rolling_n", 40)
+    if len(R) >= w and rl:
+        roll = pd.Series(R).rolling(w).mean()
+        for lvl, q in (("🟡 жёлтый", rl["p05_any_window"]),
+                       ("🔴 красный", rl["p01_worst_window"])):
+            below = roll[roll <= q]
+            if len(below):
+                i = int(below.index[0])
+                print(f"     {lvl} по ожиданию ({q:+.3f}R): сделка #{i+1}, "
+                      f"{pd.Timestamp(ts[i]).date()}")
+            else:
+                print(f"     {lvl} по ожиданию ({q:+.3f}R): не сработал")
+        naive = roll[roll < 0]
+        print(f"     справочно: наивный триггер «ожидание < 0» сработал бы "
+              f"{int(((roll < 0).astype(int).diff() == 1).sum())} раз "
+              f"за {len(R)} сделок")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -134,6 +212,14 @@ def main() -> int:
     s.add_argument("--data", default="./data")
     s.add_argument("--file", default=None)
     s.set_defaults(func=cmd_status)
+
+    rp = sub.add_parser("replay", help="проверить монитор на истории")
+    rp.add_argument("--data", default="./data")
+    rp.add_argument("--tf", default="4h")
+    rp.add_argument("--db", default="./knowledge.db")
+    rp.add_argument("--name", required=True)
+    rp.add_argument("--as-of", required=True, help="дата ретроспективной заморозки")
+    rp.set_defaults(func=cmd_replay)
 
     args = ap.parse_args()
     return args.func(args)

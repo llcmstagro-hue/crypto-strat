@@ -34,6 +34,8 @@ import time
 from crypto_strat.data.loader import load_basket
 from crypto_strat.knowledge.db import KnowledgeBase, Record
 from crypto_strat.search.evolution import evolve
+from crypto_strat.search.ensembles import (ensemble_pool, ensemble_seeds,
+                                          MAX_HYPOTHESES)
 from crypto_strat.search.pool import base_pool, evolution_seeds, new_classes_pool
 from crypto_strat.search.score import Idea, classify, gate
 from crypto_strat.validation.barriers import Thresholds, run_symbols, thresholds_for_tf
@@ -57,7 +59,9 @@ def build_pool(with_evolution: bool = True, classes: str = "all"):
     """
     OLD_SEEDS = ("donchian_breakout", "keltner_breakout", "tsmom",
                  "bb_meanrev", "order_block", "level_retest")
-    if classes == "new":
+    if classes == "ensemble":
+        pool, seed_names = ensemble_pool(), ensemble_seeds()
+    elif classes == "new":
         pool, seed_names = new_classes_pool(), EVO_SEEDS_NEW
     elif classes == "base":
         pool, seed_names = base_pool(), OLD_SEEDS
@@ -72,6 +76,15 @@ def build_pool(with_evolution: bool = True, classes: str = "all"):
     for h, idea in seeds:
         grown.extend(evolve(h.config, idea, h.grid,
                             primary=h.primary, exclude_symbols=h.exclude_symbols))
+    # ЛИМИТ ШИРИНЫ: каждая лишняя гипотеза поднимает планку барьера 5 всем
+    # будущим кандидатам. Обрезаем детерминированно и говорим об этом вслух,
+    # а не молча — молчаливое усечение читается как «проверили всё».
+    if len(grown) > MAX_HYPOTHESES:
+        print(f"[лимит ширины] пул {len(grown)} -> {MAX_HYPOTHESES} гипотез; "
+              f"отброшено {len(grown) - MAX_HYPOTHESES} вариантов Evolution "
+              f"(базовые гипотезы сохранены полностью)")
+        base_n = len(pool)
+        grown = pool + grown[base_n:base_n + max(0, MAX_HYPOTHESES - base_n)]
     return grown
 
 
@@ -83,7 +96,8 @@ def main() -> int:
     ap.add_argument("--db", default="./knowledge.db")
     ap.add_argument("--trials", default="./trials_lab.json")
     ap.add_argument("--no-evolution", action="store_true")
-    ap.add_argument("--classes", default="all", choices=["all", "new", "base"],
+    ap.add_argument("--classes", default="all",
+                    choices=["all", "new", "base", "ensemble"],
                     help="какие классы механизмов гонять")
     ap.add_argument("--fail-fast", action="store_true",
                     help="останавливать гипотезу на первом проваленном барьере")
