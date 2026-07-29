@@ -211,6 +211,7 @@ def run_backtest(df: pd.DataFrame,
     n_dropped_in_pos = 0
     n_no_stop = 0
     n_expired = 0
+    n_inverted = 0
 
     for k in range(n):
         # 1) новые заявки становятся живыми ровно на баре signal_bar+1
@@ -264,10 +265,24 @@ def run_backtest(df: pd.DataFrame,
             if fill is not None:
                 it, entry_price = fill
                 stop_price = _resolve_stop(cfg, it, entry_price, ctx)
+                # ИНВАРИАНТ: защитный стоп обязан лежать на ПРОИГРЫШНОЙ стороне
+                # входа (ниже для лонга, выше для шорта).
+                #
+                # Структурные стопы (канал, свинг, край зоны) этого не гарантируют:
+                # при входе против движения уровень запросто оказывается по другую
+                # сторону цены. Без проверки abs() превращает такой стоп в
+                # ПРИБЫЛЬНЫЙ выход — «стоп-лосс», приносящий +R. Winrate улетает
+                # к 97%, PF к 20, и это выглядит как находка, а не как поломка.
+                inverted = stop_price is not None and (
+                    (it.direction > 0 and stop_price >= entry_price) or
+                    (it.direction < 0 and stop_price <= entry_price))
                 stop_dist = (abs(entry_price - stop_price)
                              if stop_price is not None else 0.0)
-                if stop_price is None or stop_dist <= 0:
-                    n_no_stop += 1
+                if stop_price is None or stop_dist <= 0 or inverted:
+                    if inverted:
+                        n_inverted += 1
+                    else:
+                        n_no_stop += 1
                     active.remove(it)
                 else:
                     risk_amount = equity * risk_pct
@@ -323,6 +338,7 @@ def run_backtest(df: pd.DataFrame,
         "dropped_in_position": n_dropped_in_pos,
         "expired_orders": n_expired,
         "rejected_no_stop": n_no_stop,
+        "rejected_inverted_stop": n_inverted,
         "leverage_capped": int(tdf["capped"].sum()) if len(tdf) else 0,
         "bars": n,
         "round_trip_bps": cfg.round_trip_bps(),
@@ -403,9 +419,12 @@ def _manage(pos: dict, k: int, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
     pos["mfe"] = max(pos["mfe"], float(fav))
     pos["mae"] = min(pos["mae"], float(adv))
 
-    # стоп
+    # стоп. Различаем НАЧАЛЬНЫЙ защитный стоп и подтянутый трейлингом:
+    # выход по трейлингу выше входа — это нормальная прибыль, а не «прибыльный
+    # стоп-лосс». Одна метка на оба случая делает диагностику нечитаемой.
     if (d > 0 and l[k] <= pos["stop"]) or (d < 0 and h[k] >= pos["stop"]):
-        return (k, float(pos["stop"]), "stop")
+        moved = abs(pos["stop"] - pos["init_stop"]) > 1e-12
+        return (k, float(pos["stop"]), "trail_stop" if moved else "stop")
 
     # тейк
     if pos["tp"] is not None:

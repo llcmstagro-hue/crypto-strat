@@ -370,8 +370,29 @@ def filter_atr_regime(df: pd.DataFrame, p: dict):
     return m, m
 
 
+class MissingVolumeError(RuntimeError):
+    """Объёмный блок запрошен на данных без объёма."""
+
+
+def has_volume(df: pd.DataFrame) -> bool:
+    if "has_volume" in df.attrs:
+        return bool(df.attrs["has_volume"])
+    v = df.get("volume")
+    return v is not None and bool(v.notna().any() and (v.fillna(0) > 0).any())
+
+
 def filter_volume(df: pd.DataFrame, p: dict):
-    """Объём выше своей средней — подтверждение интереса."""
+    """Объём выше своей средней — подтверждение интереса.
+
+    Если объёма в данных нет, блок ПАДАЕТ, а не работает на нулях. Молча
+    вернуть маску из NaN-сравнений было бы хуже всего: фильтр либо пропустил бы
+    всё, либо не пропустил ничего, и в обоих случаях результат выглядел бы
+    осмысленным. Лучше явный отказ — гипотеза просто не попадёт в очередь.
+    """
+    if not has_volume(df):
+        raise MissingVolumeError(
+            "объёмный фильтр невозможен: в данных нет объёма "
+            "(H4-котировки идут без volume)")
     v = df["volume"].to_numpy()
     ma = ind.sma(v, int(p.get("period", 20)))
     m = (~np.isnan(ma)) & (v > ma * float(p.get("mult", 1.0)))

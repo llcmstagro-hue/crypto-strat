@@ -5,10 +5,11 @@
 # артефакты прогонов
 trials*.json
 *.log
+raw_main/
 
-# результаты прогонов ОСТАЮТСЯ в репозитории: контейнер эфемерный, а разбор
-# по барьерам нужен для следующего захода (calibration_report.json,
-# search_results*.json)
+# результаты прогонов и БАЗА ЗНАНИЙ остаются в репозитории: контейнер
+# эфемерный, а накопленное знание по гипотезам — главный актив лаборатории
+# (knowledge.db, calibration_report.json, search_results*.json, lab_results.json)
 
 __pycache__/
 *.pyc

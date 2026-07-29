@@ -20,7 +20,11 @@ import numpy as np
 import pandas as pd
 
 TF_MS = {"1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000}
-REQUIRED = ["ts", "open", "high", "low", "close", "volume"]
+# volume НЕ обязателен: часть источников отдаёт котировки без объёма.
+# Тогда объёмные блоки просто недоступны (см. blocks.has_volume), а ценовые
+# работают как обычно. Раньше volume был в REQUIRED, и dropna сносил ВЕСЬ файл.
+REQUIRED = ["ts", "open", "high", "low", "close"]
+OPTIONAL = ["volume"]
 
 BASKET = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "DOGEUSDT"]
 
@@ -63,6 +67,13 @@ def load_ohlcv_csv(path: str, tf: str | None = None, strict: bool = True) -> pd.
     for c in REQUIRED:
         df[c] = pd.to_numeric(df[c], errors="coerce")
     df = df.dropna(subset=REQUIRED)
+
+    # объём — по возможности; пустая колонка не должна ронять файл
+    if "volume" in df.columns:
+        df["volume"] = pd.to_numeric(df["volume"], errors="coerce")
+    else:
+        df["volume"] = np.nan
+    has_vol = bool(df["volume"].notna().any() and (df["volume"].fillna(0) > 0).any())
     df["ts"] = normalize_ts_to_ms(df["ts"]).astype("int64")
     df = df.drop_duplicates("ts").sort_values("ts").reset_index(drop=True)
     df["dt_utc"] = pd.to_datetime(df["ts"], unit="ms", utc=True)
@@ -83,6 +94,7 @@ def load_ohlcv_csv(path: str, tf: str | None = None, strict: bool = True) -> pd.
 
     df.attrs["tf"] = tf
     df.attrs["source"] = os.path.basename(path)
+    df.attrs["has_volume"] = has_vol
     return df[["ts", "dt_utc", "open", "high", "low", "close", "volume"]]
 
 
@@ -182,6 +194,7 @@ def resample_ohlcv(df: pd.DataFrame, tf_from: str, tf_to: str,
     out["dt_utc"] = pd.to_datetime(out["ts"], unit="ms", utc=True)
     out = out[["ts", "dt_utc", "open", "high", "low", "close", "volume"]]
     out.attrs["tf"] = tf_to
+    out.attrs["has_volume"] = bool(df.attrs.get("has_volume", True))
     return out
 
 

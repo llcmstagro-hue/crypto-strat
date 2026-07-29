@@ -76,21 +76,46 @@ class Hypothesis:
 
 
 class TrialLog:
-    """Счётчик перебранных конфигов. Без него метрики победителя не значат ничего."""
+    """Счётчик перебранных конфигов. Без него метрики победителя не значат ничего.
+
+    Считается ДВА числа, и разница между ними существенна:
+
+      * `total`     — сколько конфигов вообще прогнано (нагрузка, для отчёта);
+      * `selection` — сколько конфигов РЕАЛЬНО СОРЕВНОВАЛИСЬ за право быть
+                      победителем, чей результат мы потом публикуем.
+
+    Поправка на multiple testing (барьер 5) отвечает на вопрос «мы выбрали
+    лучшего из N — насколько он мог оказаться лучшим случайно». Значит в N
+    входят только те конфиги, которые МОГЛИ стать этим победителем: перебор
+    на train внутри гипотезы и все гипотезы между собой.
+
+    НЕ входят внутренние переборы walk-forward: конфиг, выбранный в окне 7,
+    меряется на собственном OOS окна 7 и агрегируется — он никогда не
+    становится «тем самым победителем», чью метрику мы публикуем. Считать их
+    означало бы раздуть N в ~30 раз без статистического основания и сделать
+    барьер непроходимым по бухгалтерской причине, а не по существу.
+
+    Порог DSR при этом НЕ меняется (0.95) — правится только смысл N.
+    """
 
     def __init__(self, path: str = "./trials.json"):
         self.path = path
-        self.data = {"total": 0, "by_tag": {}, "hypotheses": 0}
+        self.data = {"total": 0, "selection": 0, "by_tag": {}, "hypotheses": 0}
         if os.path.exists(path):
             try:
                 with open(path, encoding="utf-8") as f:
-                    self.data = json.load(f)
+                    self.data = {**self.data, **json.load(f)}
             except Exception:
                 pass
 
-    def record(self, n: int, tag: str = "") -> None:
-        self.data["total"] += int(n)
-        self.data["by_tag"][tag] = self.data["by_tag"].get(tag, 0) + int(n)
+    def record(self, n: int, tag: str = "", selection: bool = True) -> None:
+        """selection=False — прогон-диагностика (walk-forward, соседи по сетке):
+        считается в нагрузку, но не в пул отбора."""
+        n = int(n)
+        self.data["total"] += n
+        if selection:
+            self.data["selection"] = self.data.get("selection", 0) + n
+        self.data["by_tag"][tag] = self.data["by_tag"].get(tag, 0) + n
         self._save()
 
     def record_hypothesis(self) -> None:
@@ -98,12 +123,17 @@ class TrialLog:
         self._save()
 
     def reset(self) -> None:
-        self.data = {"total": 0, "by_tag": {}, "hypotheses": 0}
+        self.data = {"total": 0, "selection": 0, "by_tag": {}, "hypotheses": 0}
         self._save()
 
     @property
     def total(self) -> int:
         return int(self.data["total"])
+
+    @property
+    def selection(self) -> int:
+        """Пул отбора — вход барьера 5."""
+        return int(self.data.get("selection", self.data["total"]))
 
     @property
     def hypotheses(self) -> int:

@@ -132,7 +132,8 @@ def objective(results: list[BacktestResult], min_trades: int = 30) -> float:
 
 def grid_search(dataset: dict, hypo: Hypothesis, symbols: list[str],
                 ts_from: int | None, ts_to: int | None,
-                trial_log: TrialLog | None = None, tag: str = "") -> tuple:
+                trial_log: TrialLog | None = None, tag: str = "",
+                selection: bool = True) -> tuple:
     """Подбор параметров ТОЛЬКО на переданном окне (обычно — train).
 
     Возвращает (лучший конфиг, таблица всех проб). Таблица нужна барьеру 5:
@@ -148,7 +149,7 @@ def grid_search(dataset: dict, hypo: Hypothesis, symbols: list[str],
         rows.append({"cfg": cfg, "score": sc, "n_trades": len(R),
                      "expectancy": float(R.mean()) if len(R) else 0.0})
     if trial_log is not None:
-        trial_log.record(len(variants), tag or hypo.name)
+        trial_log.record(len(variants), tag or hypo.name, selection=selection)
 
     finite = [r for r in rows if np.isfinite(r["score"])]
     best = max(finite, key=lambda r: r["score"]) if finite else None
@@ -227,7 +228,8 @@ def barrier_walkforward(dataset: dict, hypo: Hypothesis, primary: list[str],
 
     rows, oos_R = [], []
     for (a, b, c) in windows:
-        cfg, _ = grid_search(dataset, hypo, primary, a, b, trial_log, f"{hypo.name}/wf")
+        cfg, _ = grid_search(dataset, hypo, primary, a, b, trial_log,
+                             f"{hypo.name}/wf", selection=False)
         res = run_symbols(dataset, cfg, primary, b, c)
         R = pooled_R(res)
         m = trade_metrics(R)
@@ -338,14 +340,15 @@ def barrier_multiple_testing(oos_results: list[BacktestResult], table: list,
     m = trade_metrics(R)
     sharpes = [r["score"] for r in table if np.isfinite(r["score"])]
     var = st.sr_variance_across_trials(sharpes)
-    n_trials = max(trial_log.total, len(table), 1)
+    # пул ОТБОРА, а не общая нагрузка (см. TrialLog)
+    n_trials = max(trial_log.selection, len(table), 1)
 
     d = st.deflated_sharpe_ratio(m["sharpe_trade"], m["n_trades"], m["skew"],
                                  m["kurtosis"], n_trials, var)
     mtrl = st.min_track_record_length(m["sharpe_trade"], m["skew"], m["kurtosis"],
                                       sr_benchmark=d["sr_threshold"])
     passed = d["dsr"] >= th.dsr_min
-    note = (f"DSR={d['dsr']:.3f} (нужно >= {th.dsr_min}) при {n_trials} пробах; "
+    note = (f"DSR={d['dsr']:.3f} (нужно >= {th.dsr_min}) при {n_trials} пробах отбора; "
             f"SR={d['sr']:+.3f} против планки случайного максимума "
             f"{d['sr_threshold']:+.3f}; нужно сделок для значимости: "
             + ("бесконечно" if not np.isfinite(mtrl) else f"{mtrl:.0f}")
@@ -386,7 +389,7 @@ def barrier_param_stability(dataset: dict, hypo: Hypothesis, cfg: StrategyConfig
                          "expectancy_R": m["expectancy_R"], "sharpe": m["sharpe_trade"]})
             n_evals += 1
     if trial_log is not None:
-        trial_log.record(n_evals, f"{hypo.name}/stability")
+        trial_log.record(n_evals, f"{hypo.name}/stability", selection=False)
 
     exps = np.array([r["expectancy_R"] for r in rows])
     frac_pos = float((exps > 0).mean()) if len(exps) else 0.0

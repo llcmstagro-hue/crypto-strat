@@ -160,6 +160,42 @@ def test_tiny_stop_is_punished():
           f"стоп 0.15% -> {cost_tiny:.3f}R")
 
 
+def test_stop_on_losing_side():
+    """Стоп обязан быть на проигрышной стороне входа — во ВСЕХ сделках.
+
+    Ловит целый класс поломок: структурный стоп (канал/свинг/край зоны) может
+    оказаться по другую сторону цены, и тогда abs() превращает «стоп-лосс»
+    в прибыльный выход. Симптом — winrate под 97% и PF за 20.
+    """
+    df = make_ohlcv(n=12000, regime="edge", seed=41)
+    combos = [
+        ("bollinger_meanrev", {"type": "channel", "params": {"period": 20}}),
+        ("bollinger_meanrev", {"type": "structure", "params": {"lookback": 20}}),
+        ("donchian_breakout", {"type": "channel", "params": {"period": 20}}),
+        ("rsi_threshold", {"type": "structure", "params": {"lookback": 20}}),
+        ("order_block", {"type": "block", "params": {}}),
+    ]
+    for entry, stop in combos:
+        cfg = StrategyConfig.from_dict(
+            {"name": f"{entry}/{stop['type']}", "entry": {"type": entry, "params": {}},
+             "stop": stop, "exit": {"type": "fixed_rr", "params": {"rr": 2.0, "max_bars": 96}}})
+        r = run_backtest(df, cfg, "T")
+        if not r.n_trades:
+            continue
+        t = r.trades
+        d = t["direction"].to_numpy()
+        bad = ((d > 0) & (t["stop_price"].to_numpy() >= t["entry_price"].to_numpy())) | \
+              ((d < 0) & (t["stop_price"].to_numpy() <= t["entry_price"].to_numpy()))
+        assert not bad.any(), (
+            f"{cfg.name}: {bad.sum()} сделок с перевёрнутым стопом — "
+            f"«стоп» на выигрышной стороне даёт фантомную прибыль")
+        # и никаких прибыльных стоп-лоссов
+        st = t[t["exit_reason"] == "stop"]
+        assert (st["R"] <= 1e-9).all(), \
+            f"{cfg.name}: есть стоп-лоссы с положительным R"
+        print(f"  ok  {cfg.name}: {len(t)} сделок, стопы на верной стороне")
+
+
 def test_funding_accrual():
     """Funding начисляется по числу пройденных 8-часовых границ."""
     step = 8 * 3_600_000

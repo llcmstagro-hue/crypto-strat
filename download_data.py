@@ -345,7 +345,11 @@ def quality_report(df: pd.DataFrame, tf: str) -> dict:
     rep["ohlc_broken"] = int((
         (h < l) | (h < o) | (h < c) | (l > o) | (l > c) | (o <= 0) | (c <= 0)
     ).sum())
-    rep["zero_vol"] = int((df["volume"].to_numpy() <= 0).sum())
+
+    # объёма может не быть вовсе — это не брак, а ограничение источника
+    vol = pd.to_numeric(df.get("volume"), errors="coerce") if "volume" in df else None
+    rep["has_volume"] = bool(vol is not None and vol.notna().any() and (vol.fillna(0) > 0).any())
+    rep["zero_vol"] = int((vol.fillna(0) <= 0).sum()) if rep["has_volume"] else 0
 
     # --- коллапс ликвидности ---
     # Мёртвый или подменённый фид не даёт ни дырок, ни битых OHLC: цены
@@ -353,7 +357,7 @@ def quality_report(df: pd.DataFrame, tf: str) -> dict:
     # участке рисует исполнение, которого в реальности не существует.
     rep["dead_bars"] = 0
     rep["dead_from"] = None
-    if len(df) > 200:
+    if len(df) > 200 and rep.get("has_volume"):
         vol = df["volume"].to_numpy(float)
         half = len(vol) // 2
         base = float(np.median(vol[:half]))
@@ -393,14 +397,15 @@ def print_quality_table(rows: list[tuple]) -> None:
     print("КАЧЕСТВО ДАННЫХ (р.5.6)")
     print("=" * 108)
     print(f"{'файл':<28}{'баров':>8}{'период':>26}{'покр.%':>9}"
-          f"{'проп':>7}{'дубл':>6}{'OHLC':>6}{'вырав':>7}  вердикт")
+          f"{'проп':>7}{'дубл':>6}{'OHLC':>6}{'вырав':>7}{'объём':>7}  вердикт")
     print("-" * 108)
     for name, rep in rows:
         span = (f"{rep['first'].date()}..{rep['last'].date()}"
                 if rep["first"] is not None else "-")
         print(f"{name:<28}{rep['bars']:>8}{span:>26}{rep['coverage_pct']:>9.2f}"
               f"{rep['missing_bars']:>7}{rep['dups']:>6}{rep['ohlc_broken']:>6}"
-              f"{rep['misaligned']:>7}  {verdict(rep)}")
+              f"{rep['misaligned']:>7}{('есть' if rep.get('has_volume') else 'НЕТ'):>7}"
+              f"  {verdict(rep)}")
     print("=" * 108)
 
 

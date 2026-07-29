@@ -131,7 +131,7 @@ def overfit_tiny_stop(base: str = "donchian") -> Hypothesis:
     }, source="калибровка / заведомая подгонка №1", grid_cap=20)
 
 
-def overfit_many_filters(base: str = "donchian") -> Hypothesis:
+def overfit_many_filters(base: str = "donchian", has_volume: bool = True) -> Hypothesis:
     """ПОДГОНКА №2: шесть фильтров, вырезающих узкое «удачное» подмножество.
 
     Каждый фильтр по отдельности звучит разумно — вместе они оставляют горстку
@@ -151,7 +151,8 @@ def overfit_many_filters(base: str = "donchian") -> Hypothesis:
             {"type": "htf_trend", "params": {"factor": 4, "ema_period": 50}},
             {"type": "session", "params": {"start_hour": 13, "end_hour": 17}},
             {"type": "atr_regime", "params": {"min_pct": 0.004, "max_pct": 0.011}},
-            {"type": "volume", "params": {"period": 20, "mult": 1.3}},
+            ({"type": "volume", "params": {"period": 20, "mult": 1.3}} if has_volume
+             else {"type": "ma_side", "params": {"period": 200, "kind": "sma"}}),
             {"type": "rsi_bound", "params": {"period": 14, "min": 52, "max": 68}},
             {"type": "ema_slope", "params": {"period": 100, "lag": 20, "min_slope": 0.004}},
         ],
@@ -204,6 +205,11 @@ def main() -> int:
     tl_edge = TrialLog("./trials_calibration_edge.json")
     tl_edge.reset()
 
+    hv = bool(next(iter(ds_edge.values()))["ohlcv"].attrs.get("has_volume", True))
+    if not hv:
+        print("ℹ️  в данных нет объёма — объёмный фильтр в подгонке C2/C4 заменён "
+              "на ценовой (ma_side), число правил сохранено")
+
     plan = [
         ("A. чувствительность", honest_breakout(), True,
          "честная стратегия на данных с эджем -> ДОЛЖНА ПРОЙТИ"),
@@ -212,11 +218,11 @@ def main() -> int:
          "ЕГО эдж в этих данных"),
         ("C1. подгонка: мелкий стоп", overfit_tiny_stop("donchian"), False,
          "должна умереть на издержках/стопе"),
-        ("C2. подгонка: много фильтров", overfit_many_filters("donchian"), False,
+        ("C2. подгонка: много фильтров", overfit_many_filters("donchian", hv), False,
          "должна умереть на минимуме сделок"),
         ("C3. подгонка OB: мелкий стоп", overfit_tiny_stop("ob"), False,
          "то же на блоке трейдера"),
-        ("C4. подгонка OB: много фильтров", overfit_many_filters("ob"), False,
+        ("C4. подгонка OB: много фильтров", overfit_many_filters("ob", hv), False,
          "то же на блоке трейдера"),
     ]
 
