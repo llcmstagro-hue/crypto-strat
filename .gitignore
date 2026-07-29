@@ -4,9 +4,11 @@
 
 # артефакты прогонов
 trials*.json
-calibration_report.json
-search_results.json
 *.log
+
+# результаты прогонов ОСТАЮТСЯ в репозитории: контейнер эфемерный, а разбор
+# по барьерам нужен для следующего захода (calibration_report.json,
+# search_results*.json)
 
 __pycache__/
 *.pyc

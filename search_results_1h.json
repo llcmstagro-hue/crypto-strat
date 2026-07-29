@@ -1,0 +1,644 @@
+{
+  "real_data": true,
+  "tf": "1h",
+  "primary": [
+    "BTCUSDT"
+  ],
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "BNBUSDT",
+    "DOGEUSDT"
+  ],
+  "trials_total": 1213,
+  "hypotheses_run": 8,
+  "results": [
+    {
+      "hypothesis": "acad_tsmom_htf",
+      "source": "SSRN 2089463 + комбинаторика блоков (р.6.5 п.4)",
+      "survived": false,
+      "barriers_passed": 2,
+      "robustness": 0.5105,
+      "failed_barriers": [
+        "1. Out-of-sample",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "barrier_notes": {
+        "1. Out-of-sample": "train exp=+0.369R sharpe=+0.149 n=119 -> test exp=-0.154R PF=0.79 sharpe=-0.067 n=47 (сохранение эджа -45%)",
+        "6. Стабильность параметров": "центр exp=+0.369R, медиана соседей=+0.223R (60% от центра), в плюсе 100% из 3 соседей",
+        "3. Кросс-инструмент": "в плюсе 2/4 инструментов с выборкой (всего пригодных 5/5); DOGEUSDT: exp=+0.132R n=178",
+        "4. Минимум сделок": "всего 853 сделок; инструментов с достаточной выборкой 5/5",
+        "2. Walk-forward": "4/6 окон в плюсе (67%), суммарно OOS exp=-0.026R n=97",
+        "5. Поправка на multiple testing": "DSR=0.001 (нужно >= 0.95) при 322 пробах; SR=-0.067 против планки случайного максимума +0.444; нужно сделок для значимости: бесконечно, есть 47",
+        "7. Реалистичные издержки": "round-trip 30 bps, издержки съедают 61% валовой; медиана стопа = 2.96 ATR; при x2 издержках exp=-0.035R (было +0.094R)"
+      },
+      "best_config": {
+        "name": "acad_tsmom_htf|lookback=168,mult=4.0,ema_period=50",
+        "entry": {
+          "type": "tsmom",
+          "params": {
+            "lookback": 168
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 4.0,
+            "max_bars": 480
+          }
+        },
+        "direction": "both",
+        "timeframe": "1h",
+        "filters": [
+          {
+            "type": "htf_trend",
+            "params": {
+              "factor": 4,
+              "ema_period": 50
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "SSRN 2089463 + комбинаторика блоков (р.6.5 п.4)",
+          "notes": "4 правила — в пределах разумного (красный флаг начинается с >6)."
+        }
+      },
+      "metrics": {
+        "n_trades": 853,
+        "winrate": 0.3223915592028136,
+        "profit_factor": 1.1570744277139497,
+        "expectancy_R": 0.09410619318654372,
+        "sharpe_trade": 0.04492240188694759,
+        "total_R": 80.2725827881218,
+        "max_dd_R": 29.896259050129416,
+        "max_loss_streak": 13
+      },
+      "flags": []
+    },
+    {
+      "hypothesis": "acad_tsmom",
+      "source": "SSRN 2089463 (Moskowitz/Ooi/Pedersen, Time Series Momentum); SSRN 4675565 (Han/Kang/Ryu, крипто, с издержками)",
+      "survived": false,
+      "barriers_passed": 1,
+      "robustness": 0.275,
+      "failed_barriers": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "barrier_notes": {
+        "1. Out-of-sample": "train exp=+0.285R sharpe=+0.101 n=100 -> test exp=-0.292R PF=0.66 sharpe=-0.174 n=41 (сохранение эджа -172%)",
+        "6. Стабильность параметров": "центр exp=+0.285R, медиана соседей=-0.014R (-5% от центра), в плюсе 25% из 4 соседей",
+        "3. Кросс-инструмент": "в плюсе 2/4 инструментов с выборкой (всего пригодных 5/5); DOGEUSDT: exp=+0.257R n=148",
+        "4. Минимум сделок": "всего 718 сделок; инструментов с достаточной выборкой 5/5",
+        "2. Walk-forward": "2/6 окон в плюсе (33%), суммарно OOS exp=-0.365R n=53",
+        "5. Поправка на multiple testing": "DSR=0.000 (нужно >= 0.95) при 193 пробах; SR=-0.174 против планки случайного максимума +0.505; нужно сделок для значимости: бесконечно, есть 41",
+        "7. Реалистичные издержки": "round-trip 30 bps, издержки съедают 62% валовой; медиана стопа = 2.95 ATR; при x2 издержках exp=-0.028R (было +0.096R)"
+      },
+      "best_config": {
+        "name": "acad_tsmom|lookback=168,bars=168,mult=3.0",
+        "entry": {
+          "type": "tsmom",
+          "params": {
+            "lookback": 168
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0
+          }
+        },
+        "exit": {
+          "type": "time",
+          "params": {
+            "bars": 168,
+            "max_bars": 336
+          }
+        },
+        "direction": "both",
+        "timeframe": "1h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "SSRN 2089463 (Moskowitz/Ooi/Pedersen, Time Series Momentum); SSRN 4675565 (Han/Kang/Ryu, крипто, с издержками)",
+          "notes": "Механика полностью формализуема. Волатильностное масштабирование позиции из статьи НЕ переносим: у нас риск фиксирован в % на сделку под CFT."
+        }
+      },
+      "metrics": {
+        "n_trades": 718,
+        "winrate": 0.2799442896935933,
+        "profit_factor": 1.1209202103182765,
+        "expectancy_R": 0.09576496760149637,
+        "sharpe_trade": 0.03437547909939866,
+        "total_R": 68.7592467378744,
+        "max_dd_R": 35.37298868734247,
+        "max_loss_streak": 21
+      },
+      "flags": []
+    },
+    {
+      "hypothesis": "classic_keltner_breakout",
+      "source": "Kaufman; каналы Кельтнера как волатильностный пробой",
+      "survived": false,
+      "barriers_passed": 1,
+      "robustness": 0.2575,
+      "failed_barriers": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "barrier_notes": {
+        "1. Out-of-sample": "train exp=-0.025R sharpe=-0.011 n=275 -> test exp=-0.133R PF=0.81 sharpe=-0.071 n=119 (сохранение эджа 0%)",
+        "6. Стабильность параметров": "центр exp=-0.025R, медиана соседей=-0.063R (0% от центра), в плюсе 0% из 4 соседей",
+        "3. Кросс-инструмент": "в плюсе 2/4 инструментов с выборкой (всего пригодных 5/5); DOGEUSDT: exp=+0.089R n=366",
+        "4. Минимум сделок": "всего 1877 сделок; инструментов с достаточной выборкой 5/5",
+        "2. Walk-forward": "2/6 окон в плюсе (33%), суммарно OOS exp=-0.106R n=266",
+        "5. Поправка на multiple testing": "DSR=0.075 (нужно >= 0.95) при 647 пробах; SR=-0.071 против планки случайного максимума +0.078; нужно сделок для значимости: бесконечно, есть 119",
+        "7. Реалистичные издержки": "round-trip 30 bps, издержки съедают 99% валовой; медиана стопа = 1.99 ATR; при x2 издержках exp=-0.180R (было +0.006R)"
+      },
+      "best_config": {
+        "name": "classic_keltner_breakout|ema_period=20,mult=2.5,mult=2.0",
+        "entry": {
+          "type": "keltner_breakout",
+          "params": {
+            "ema_period": 20,
+            "atr_period": 14,
+            "mult": 2.5
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.0
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "1h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Kaufman; каналы Кельтнера как волатильностный пробой",
+          "notes": ""
+        }
+      },
+      "metrics": {
+        "n_trades": 1877,
+        "winrate": 0.31273308470964306,
+        "profit_factor": 1.0085498652683835,
+        "expectancy_R": 0.005820364917253859,
+        "sharpe_trade": 0.0028336117741046825,
+        "total_R": 10.924824949685549,
+        "max_dd_R": 65.86354112550069,
+        "max_loss_streak": 16
+      },
+      "flags": []
+    },
+    {
+      "hypothesis": "classic_donchian_breakout",
+      "source": "Kaufman, Trading Systems and Methods; система Дончиана/«черепах»",
+      "survived": false,
+      "barriers_passed": 1,
+      "robustness": 0.2542,
+      "failed_barriers": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "barrier_notes": {
+        "1. Out-of-sample": "train exp=-0.099R sharpe=-0.049 n=350 -> test exp=-0.186R PF=0.74 sharpe=-0.104 n=154 (сохранение эджа 0%)",
+        "6. Стабильность параметров": "центр exp=-0.099R, медиана соседей=-0.126R (0% от центра), в плюсе 0% из 6 соседей",
+        "3. Кросс-инструмент": "в плюсе 1/4 инструментов с выборкой (всего пригодных 5/5); DOGEUSDT: exp=+0.098R n=483",
+        "4. Минимум сделок": "всего 2463 сделок; инструментов с достаточной выборкой 5/5",
+        "2. Walk-forward": "3/6 окон в плюсе (50%), суммарно OOS exp=-0.137R n=295",
+        "5. Поправка на multiple testing": "DSR=0.042 (нужно >= 0.95) при 517 пробах; SR=-0.104 против планки случайного максимума +0.063; нужно сделок для значимости: бесконечно, есть 154",
+        "7. Реалистичные издержки": "round-trip 30 bps, издержки съедают 125% валовой; медиана стопа = 2.01 ATR; при x2 издержках exp=-0.224R (было -0.036R)"
+      },
+      "best_config": {
+        "name": "classic_donchian_breakout|period=30,mult=3.0,mult=2.0",
+        "entry": {
+          "type": "donchian_breakout",
+          "params": {
+            "period": 30
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.0
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "1h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Kaufman, Trading Systems and Methods; система Дончиана/«черепах»",
+          "notes": "Тот же блок, что и в позитивном контроле калибровки. Здесь он проходит фильтр НА ОБЩИХ ОСНОВАНИЯХ как обычная гипотеза."
+        }
+      },
+      "metrics": {
+        "n_trades": 2463,
+        "winrate": 0.2980105562322371,
+        "profit_factor": 0.9479887530976833,
+        "expectancy_R": -0.03572183118773363,
+        "sharpe_trade": -0.01770442905082091,
+        "total_R": -87.98287021538799,
+        "max_dd_R": 154.58433524149058,
+        "max_loss_streak": 20
+      },
+      "flags": []
+    },
+    {
+      "hypothesis": "classic_ma_cross",
+      "source": "Carver, Systematic Trading; Kaufman",
+      "survived": false,
+      "barriers_passed": 1,
+      "robustness": 0.2072,
+      "failed_barriers": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "barrier_notes": {
+        "1. Out-of-sample": "train exp=+0.125R sharpe=+0.043 n=155 -> test exp=-0.150R PF=0.76 sharpe=-0.085 n=75 (сохранение эджа -198%)",
+        "6. Стабильность параметров": "центр exp=+0.125R, медиана соседей=-0.067R (-54% от центра), в плюсе 0% из 3 соседей",
+        "3. Кросс-инструмент": "в плюсе 1/4 инструментов с выборкой (всего пригодных 5/5); DOGEUSDT: exp=+0.098R n=229",
+        "4. Минимум сделок": "всего 1172 сделок; инструментов с достаточной выборкой 5/5",
+        "2. Walk-forward": "2/6 окон в плюсе (33%), суммарно OOS exp=-0.254R n=195",
+        "5. Поправка на multiple testing": "DSR=0.072 (нужно >= 0.95) при 776 пробах; SR=-0.085 против планки случайного максимума +0.109; нужно сделок для значимости: бесконечно, есть 75",
+        "7. Реалистичные издержки": "round-trip 30 bps, издержки съедают 162% валовой; медиана стопа = 1.99 ATR; при x2 издержках exp=-0.260R (было -0.071R)"
+      },
+      "best_config": {
+        "name": "classic_ma_cross|fast=30,slow=100,mult=2.0",
+        "entry": {
+          "type": "ma_cross",
+          "params": {
+            "fast": 30,
+            "slow": 100
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.0
+          }
+        },
+        "exit": {
+          "type": "structure",
+          "params": {
+            "ema_period": 50,
+            "max_bars": 480
+          }
+        },
+        "direction": "both",
+        "timeframe": "1h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Carver, Systematic Trading; Kaufman",
+          "notes": ""
+        }
+      },
+      "metrics": {
+        "n_trades": 1172,
+        "winrate": 0.23122866894197952,
+        "profit_factor": 0.8944175962041023,
+        "expectancy_R": -0.07087665534875592,
+        "sharpe_trade": -0.031521263525355565,
+        "total_R": -83.06744006874204,
+        "max_dd_R": 146.6829744845308,
+        "max_loss_streak": 20
+      },
+      "flags": []
+    },
+    {
+      "hypothesis": "oss_bb_rsi_meanrev",
+      "source": "github.com/freqtrade/freqtrade-strategies — Strategy002 (ядро механики)",
+      "survived": false,
+      "barriers_passed": 1,
+      "robustness": 0.0501,
+      "failed_barriers": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "barrier_notes": {
+        "1. Out-of-sample": "train exp=-0.126R sharpe=-0.088 n=102 -> test exp=-0.418R PF=0.52 sharpe=-0.324 n=43 (сохранение эджа 0%)",
+        "6. Стабильность параметров": "центр exp=-0.126R, медиана соседей=-0.160R (0% от центра), в плюсе 0% из 3 соседей",
+        "3. Кросс-инструмент": "в плюсе 0/4 инструментов с выборкой (всего пригодных 5/5); DOGEUSDT: exp=-0.194R n=110",
+        "4. Минимум сделок": "всего 570 сделок; инструментов с достаточной выборкой 5/5",
+        "2. Walk-forward": "1/6 окон в плюсе (17%), суммарно OOS exp=-0.400R n=69",
+        "5. Поправка на multiple testing": "DSR=0.001 (нужно >= 0.95) при 968 пробах; SR=-0.324 против планки случайного максимума +0.239; нужно сделок для значимости: бесконечно, есть 43",
+        "7. Реалистичные издержки": "round-trip 30 bps, издержки съедают 170% валовой; медиана стопа = 2.64 ATR; при x2 издержках exp=-0.387R (было -0.246R)"
+      },
+      "best_config": {
+        "name": "oss_bb_rsi_meanrev|k=3.0,rr=2.0,max=40",
+        "entry": {
+          "type": "bollinger_meanrev",
+          "params": {
+            "period": 20,
+            "k": 3.0
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "fixed_rr",
+          "params": {
+            "rr": 2.0,
+            "max_bars": 96
+          }
+        },
+        "direction": "both",
+        "timeframe": "1h",
+        "filters": [
+          {
+            "type": "rsi_bound",
+            "params": {
+              "period": 14,
+              "min": 0,
+              "max": 40
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "github.com/freqtrade/freqtrade-strategies — Strategy002 (ядро механики)",
+          "notes": "Оригинал 5m/7 условий сведён к H1/3 правилам. Обещания доходности оригинала (minimal_roi 5%) проигнорированы."
+        }
+      },
+      "metrics": {
+        "n_trades": 570,
+        "winrate": 0.32280701754385965,
+        "profit_factor": 0.6801196633455662,
+        "expectancy_R": -0.24649859960546822,
+        "sharpe_trade": -0.18578918230635055,
+        "total_R": -140.50420177511685,
+        "max_dd_R": 146.31952652552837,
+        "max_loss_streak": 13
+      },
+      "flags": []
+    },
+    {
+      "hypothesis": "oss_bb_meanrev_bare",
+      "source": "freqtrade Strategy002 (ядро) — контрольная версия без фильтра",
+      "survived": false,
+      "barriers_passed": 1,
+      "robustness": 0.0,
+      "failed_barriers": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "barrier_notes": {
+        "1. Out-of-sample": "train exp=-0.117R sharpe=-0.084 n=330 -> test exp=-0.392R PF=0.53 sharpe=-0.307 n=143 (сохранение эджа 0%)",
+        "6. Стабильность параметров": "центр exp=-0.117R, медиана соседей=-0.205R (0% от центра), в плюсе 0% из 3 соседей",
+        "3. Кросс-инструмент": "в плюсе 0/4 инструментов с выборкой (всего пригодных 5/5); DOGEUSDT: exp=-0.240R n=467",
+        "4. Минимум сделок": "всего 2266 сделок; инструментов с достаточной выборкой 5/5",
+        "2. Walk-forward": "0/6 окон в плюсе (0%), суммарно OOS exp=-0.318R n=272",
+        "5. Поправка на multiple testing": "DSR=0.000 (нужно >= 0.95) при 1097 пробах; SR=-0.307 против планки случайного максимума +0.174; нужно сделок для значимости: бесконечно, есть 143",
+        "7. Реалистичные издержки": "round-trip 30 bps, издержки съедают 277% валовой; медиана стопа = 2.62 ATR; при x2 издержках exp=-0.350R (было -0.207R)"
+      },
+      "best_config": {
+        "name": "oss_bb_meanrev_bare|k=2.0,period=40,rr=2.0",
+        "entry": {
+          "type": "bollinger_meanrev",
+          "params": {
+            "period": 40,
+            "k": 2.0
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "fixed_rr",
+          "params": {
+            "rr": 2.0,
+            "max_bars": 96
+          }
+        },
+        "direction": "both",
+        "timeframe": "1h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "freqtrade Strategy002 (ядро) — контрольная версия без фильтра",
+          "notes": ""
+        }
+      },
+      "metrics": {
+        "n_trades": 2266,
+        "winrate": 0.3287731685789938,
+        "profit_factor": 0.7248563135478129,
+        "expectancy_R": -0.20684526587431856,
+        "sharpe_trade": -0.15441602537260962,
+        "total_R": -468.7113724712061,
+        "max_dd_R": 484.5416279785924,
+        "max_loss_streak": 28
+      },
+      "flags": []
+    },
+    {
+      "hypothesis": "oss_rsi2_connors",
+      "source": "QuantifiedStrategies / StockCharts ChartSchool — RSI(2), Larry Connors",
+      "survived": false,
+      "barriers_passed": 1,
+      "robustness": 0.0,
+      "failed_barriers": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "barrier_notes": {
+        "1. Out-of-sample": "train exp=-0.088R sharpe=-0.126 n=275 -> test exp=-0.252R PF=0.05 sharpe=-0.855 n=134 (сохранение эджа 0%)",
+        "6. Стабильность параметров": "центр exp=-0.088R, медиана соседей=-0.171R (0% от центра), в плюсе 0% из 4 соседей",
+        "3. Кросс-инструмент": "в плюсе 0/4 инструментов с выборкой (всего пригодных 5/5); DOGEUSDT: exp=-0.090R n=422",
+        "4. Минимум сделок": "всего 2051 сделок; инструментов с достаточной выборкой 5/5",
+        "2. Walk-forward": "0/6 окон в плюсе (0%), суммарно OOS exp=-0.236R n=141",
+        "5. Поправка на multiple testing": "DSR=0.000 (нужно >= 0.95) при 1213 пробах; SR=-0.855 против планки случайного максимума +0.782; нужно сделок для значимости: бесконечно, есть 134",
+        "7. Реалистичные издержки": "round-trip 30 bps, издержки съедают 418% валовой; медиана стопа = 2.53 ATR; при x2 издержках exp=-0.264R (было -0.115R)"
+      },
+      "best_config": {
+        "name": "oss_rsi2_connors|oversold=5.0,period=2,ema_period=5,period=100",
+        "entry": {
+          "type": "rsi_threshold",
+          "params": {
+            "period": 2,
+            "oversold": 5.0,
+            "overbought": 95.0
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "structure",
+          "params": {
+            "ema_period": 5,
+            "max_bars": 72
+          }
+        },
+        "direction": "both",
+        "timeframe": "1h",
+        "filters": [
+          {
+            "type": "ma_side",
+            "params": {
+              "period": 100,
+              "kind": "sma"
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "QuantifiedStrategies / StockCharts ChartSchool — RSI(2), Larry Connors",
+          "notes": "Симметричный шорт добавлен нами (в оригинале акцент на лонгах); фильтр SMA-200 сохранён как в источнике."
+        }
+      },
+      "metrics": {
+        "n_trades": 2051,
+        "winrate": 0.27011214041930764,
+        "profit_factor": 0.36124542766161327,
+        "expectancy_R": -0.11485588206167281,
+        "sharpe_trade": -0.2718360562512226,
+        "total_R": -235.56941410849117,
+        "max_dd_R": 237.77618145319107,
+        "max_loss_streak": 34
+      },
+      "flags": []
+    }
+  ]
+}
