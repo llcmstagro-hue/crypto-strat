@@ -29,6 +29,24 @@ class DataError(RuntimeError):
     pass
 
 
+def normalize_ts_to_ms(ts: pd.Series) -> pd.Series:
+    """Приводит таймстампы к миллисекундам, определяя единицы по величине.
+
+    Разные источники отдают секунды, миллисекунды или микросекунды, и перепутать
+    их дорого: ошибка в 1000 раз ломает выравнивание по границе ТФ и расчёт
+    funding по 8-часовым границам — молча, без исключений.
+    Ориентиры (для дат 2000-2100): с ~1e9, мс ~1e12, мкс ~1e15.
+    """
+    if ts.empty:
+        return ts
+    mx = float(ts.max())
+    if mx < 1e11:            # секунды
+        return ts * 1000
+    if mx > 1e14:            # микросекунды
+        return ts // 1000
+    return ts                # уже миллисекунды
+
+
 def load_ohlcv_csv(path: str, tf: str | None = None, strict: bool = True) -> pd.DataFrame:
     """Читает CSV со свечами и валидирует его. strict=True -> брак роняет загрузку.
 
@@ -45,7 +63,7 @@ def load_ohlcv_csv(path: str, tf: str | None = None, strict: bool = True) -> pd.
     for c in REQUIRED:
         df[c] = pd.to_numeric(df[c], errors="coerce")
     df = df.dropna(subset=REQUIRED)
-    df["ts"] = df["ts"].astype("int64")
+    df["ts"] = normalize_ts_to_ms(df["ts"]).astype("int64")
     df = df.drop_duplicates("ts").sort_values("ts").reset_index(drop=True)
     df["dt_utc"] = pd.to_datetime(df["ts"], unit="ms", utc=True)
 
@@ -131,6 +149,39 @@ def load_basket(data_dir: str = "./data", tf: str = "1h",
                     funding = load_funding_csv(os.path.join(data_dir, f))
                     break
         out[sym] = {"ohlcv": ohlcv, "funding": funding}
+    return out
+
+
+def resample_ohlcv(df: pd.DataFrame, tf_from: str, tf_to: str,
+                   require_complete: bool = True) -> pd.DataFrame:
+    """Агрегация свечей в старший ТФ.
+
+    Два требования, без которых результат тихо испортится:
+      * выравнивание по АБСОЛЮТНОЙ сетке времени (ts // tf_ms), а не по позиции
+        в массиве: иначе после дырки в данных все старшие бары поедут, и,
+        например, дневная свеча перестанет открываться в 00:00 UTC;
+      * `require_complete` выбрасывает неполные группы. Старший бар, собранный
+        из 2 часов вместо 4, — это не бар, а огрызок с заниженным диапазоном:
+        он занижает ATR и делает стопы нереально узкими.
+    """
+    if tf_from not in TF_MS or tf_to not in TF_MS:
+        raise DataError(f"неизвестный ТФ: {tf_from} -> {tf_to}")
+    step = TF_MS[tf_to] // TF_MS[tf_from]
+    if TF_MS[tf_to] % TF_MS[tf_from] or step < 2:
+        raise DataError(f"{tf_from} не складывается в {tf_to} нацело")
+
+    g = df["ts"].to_numpy() // TF_MS[tf_to]
+    agg = df.groupby(g).agg(
+        ts=("ts", "first"), open=("open", "first"), high=("high", "max"),
+        low=("low", "min"), close=("close", "last"), volume=("volume", "sum"),
+        _n=("close", "size"))
+    agg["ts"] = agg.index.to_numpy() * TF_MS[tf_to]      # ровно граница ТФ
+    if require_complete:
+        agg = agg[agg["_n"] == step]
+    out = agg.drop(columns="_n").reset_index(drop=True)
+    out["dt_utc"] = pd.to_datetime(out["ts"], unit="ms", utc=True)
+    out = out[["ts", "dt_utc", "open", "high", "low", "close", "volume"]]
+    out.attrs["tf"] = tf_to
     return out
 
 

@@ -230,7 +230,8 @@ def main() -> int:
     # ---------- B: ЧИСТЫЙ ШУМ ---------- #
     print(f"\n{'='*78}\nB. СПЕЦИФИЧНОСТЬ — та же честная стратегия на ЧИСТОМ ШУМЕ")
     print("   ожидание: ОТСЕВ. Если пройдёт — в фильтре дыра.\n" + "=" * 78)
-    ds_noise, synth_n = load_dataset(None, "noise", args.tf, args.bars)
+    noise_bars = min(len(d["ohlcv"]) for d in ds_edge.values()) if not synth else args.bars
+    ds_noise, synth_n = load_dataset(None, "noise", args.tf, noise_bars)
     tl_noise = TrialLog("./trials_calibration_noise.json")
     tl_noise.reset()
     v_noise = run_filter(ds_noise, honest_breakout(), primary=[list(ds_noise)[0]],
@@ -240,7 +241,7 @@ def main() -> int:
     results["B. специфичность (шум)"] = _pack(v_noise, False)
 
     # ---------- ВЕРДИКТ ---------- #
-    verdict = _verdict(results)
+    verdict = _verdict(results, real=not synth)
     print("\n" + "=" * 78)
     print("ВЕРДИКТ КАЛИБРОВКИ")
     print("=" * 78)
@@ -277,11 +278,27 @@ def _pack(v, expect_pass) -> dict:
     }
 
 
-def _verdict(results: dict) -> dict:
+def _verdict(results: dict, real: bool = False) -> dict:
+    """Вердикт калибровки.
+
+    ВАЖНО про тест A на РЕАЛЬНЫХ данных: он перестаёт быть критерием.
+    Смысл теста чувствительности — «честная стратегия на данных, где эдж ТОЧНО
+    ЕСТЬ, обязана пройти». На реальном рынке никто не знает, есть ли там эдж,
+    поэтому «не прошла» одинаково объясняется и глухим фильтром, и отсутствием
+    эджа — а различить эти два случая нечем. Ground truth есть только у
+    синтетики, поэтому чувствительность калибруется там, а на реальных данных
+    A остаётся справочным и критериями работают B (специфичность) и C
+    (анти-подгонка).
+    """
     lines, ok = [], True
 
     a = results.get("A. чувствительность", {})
-    if a.get("survived"):
+    if real:
+        lines.append(f"ℹ️  A. ЧУВСТВИТЕЛЬНОСТЬ: на реальных данных НЕ является "
+                     f"критерием (истинный ответ неизвестен). Факт: "
+                     f"{'прошла' if a.get('survived') else 'отсев'} "
+                     f"({a.get('barriers_passed')}/7).")
+    elif a.get("survived"):
         lines.append("✅ A. ЧУВСТВИТЕЛЬНОСТЬ: честная стратегия на данных с эджем ПРОШЛА.")
     else:
         ok = False

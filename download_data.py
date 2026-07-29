@@ -347,6 +347,24 @@ def quality_report(df: pd.DataFrame, tf: str) -> dict:
     ).sum())
     rep["zero_vol"] = int((df["volume"].to_numpy() <= 0).sum())
 
+    # --- коллапс ликвидности ---
+    # Мёртвый или подменённый фид не даёт ни дырок, ни битых OHLC: цены
+    # выглядят правдоподобно, а объём падает на порядки. Бэктест на таком
+    # участке рисует исполнение, которого в реальности не существует.
+    rep["dead_bars"] = 0
+    rep["dead_from"] = None
+    if len(df) > 200:
+        vol = df["volume"].to_numpy(float)
+        half = len(vol) // 2
+        base = float(np.median(vol[:half]))
+        if base > 0:
+            month = df["dt_utc"].dt.strftime("%Y-%m")
+            med = df.groupby(month)["volume"].transform("median").to_numpy(float)
+            dead = med < base * 0.05          # объём упал в 20+ раз против нормы
+            rep["dead_bars"] = int(dead.sum())
+            if dead.any():
+                rep["dead_from"] = df["dt_utc"].iloc[int(np.argmax(dead))]
+
     rep["first"] = df["dt_utc"].iloc[0]
     rep["last"] = df["dt_utc"].iloc[-1]
     expected = (ts[-1] - ts[0]) / tf_ms + 1
@@ -361,6 +379,8 @@ def verdict(rep: dict) -> str:
     bad = (rep["dups"] or rep["nonmonotonic"] or rep["ohlc_broken"] or rep["misaligned"])
     if bad:
         return "БРАК"
+    if rep.get("dead_bars"):
+        return f"МЁРТВЫЙ ФИД ({rep['dead_bars']} баров)"
     if rep["coverage_pct"] < 99.0:
         return "ДЫРЯВО"
     if rep["missing_bars"] > 0:
