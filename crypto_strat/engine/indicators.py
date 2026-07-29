@@ -173,20 +173,23 @@ def htf_trend_causal(df: pd.DataFrame, factor: int, ema_period: int) -> np.ndarr
     Считается по закрытиям старшего ТФ, сдвинутым так, что на i лежит последний
     ЗАКРЫТЫЙ старший бар (см. htf_resample_causal).
     """
-    htf = htf_resample_causal(df, factor)
-    close = htf["close"].to_numpy()
-    # EMA по последовательности старших закрытий, разложенная обратно на младшие бары
-    uniq_pos = np.arange(factor - 1, len(df), factor)
+    n = len(df)
+    # закрытия ПОЛНЫХ старших баров лежат на позициях factor-1, 2*factor-1, ...
+    uniq_pos = np.arange(factor - 1, n, factor)
     if len(uniq_pos) < ema_period + 1:
-        return np.zeros(len(df), dtype=int)
+        return np.zeros(n, dtype=int)
     htf_closes = df["close"].to_numpy()[uniq_pos]
     e = ema(htf_closes, ema_period)
 
-    out = np.zeros(len(df), dtype=int)
-    for i in range(len(df)):
-        g = i // factor
-        gi = g - 1 if i < (g + 1) * factor - 1 else g
-        if gi < 0 or gi >= len(e) or np.isnan(e[gi]) or np.isnan(close[i]):
-            continue
-        out[i] = 1 if htf_closes[gi] > e[gi] else -1
+    i = np.arange(n)
+    g = i // factor
+    # старший бар g доступен только начиная с его последнего младшего бара;
+    # до этого момента актуален предыдущий, уже закрытый
+    gi = np.where((i + 1) % factor == 0, g, g - 1)
+    ok = (gi >= 0) & (gi < len(e))
+    gi_safe = np.clip(gi, 0, max(len(e) - 1, 0))
+    ok &= ~np.isnan(e[gi_safe])
+
+    out = np.zeros(n, dtype=int)
+    out[ok] = np.where(htf_closes[gi_safe][ok] > e[gi_safe][ok], 1, -1)
     return out

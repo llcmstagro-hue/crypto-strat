@@ -393,6 +393,11 @@ def save(df: pd.DataFrame, path: str) -> None:
 
 
 def run_check_only(out_dir: str) -> None:
+    if not os.path.isdir(out_dir):
+        print(f"Папки {os.path.abspath(out_dir)} нет — сначала скачай данные:\n"
+              f"  python download_data.py --source bulk --tf 1h 4h 1d "
+              f"--start 2022-01 --funding")
+        return
     rows = []
     for fn in sorted(os.listdir(out_dir)):
         if not fn.endswith(".csv") or "funding" in fn:

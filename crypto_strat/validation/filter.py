@@ -74,40 +74,45 @@ class FilterVerdict:
         return "\n".join(L)
 
 
+WEIGHTS = {"2": 0.30, "3": 0.25, "6": 0.20, "1": 0.15, "5": 0.10}
+
+
 def robustness_score(barriers: list[BarrierResult]) -> float:
-    """0..1. Только признаки устойчивости — доходность сюда не допускается."""
+    """0..1. Только признаки устойчивости — доходность сюда не допускается.
+
+    Нормировка идёт на ПОЛНУЮ сумму весов, а не на сумму присутствующих.
+    Иначе гипотеза, умершая на первом же барьере, получала бы высокий балл
+    по единственной посчитанной компоненте: не дошёл до проверки — значит ноль,
+    а не «отлично по тому, что успели измерить».
+    """
     by = {b.name.split(".")[0]: b for b in barriers}
     parts = []
 
     wf = by.get("2")
     if wf and "share_positive" in wf.detail:
-        parts.append(("walk-forward", 0.30, float(np.clip(wf.detail["share_positive"], 0, 1))))
+        parts.append((WEIGHTS["2"], float(np.clip(wf.detail["share_positive"], 0, 1))))
 
     cr = by.get("3")
     if cr and "per_symbol" in cr.detail:
         per = [p for p in cr.detail["per_symbol"] if p["n"] >= 30]
         share = (sum(1 for p in per if p["expectancy_R"] > 0) / len(per)) if per else 0.0
-        parts.append(("кросс-инструмент", 0.25, float(share)))
+        parts.append((WEIGHTS["3"], float(share)))
 
     stab = by.get("6")
     if stab and "plateau_ratio" in stab.detail:
         pl = float(np.clip(stab.detail["plateau_ratio"], 0, 1))
         fp = float(np.clip(stab.detail["frac_positive"], 0, 1))
-        parts.append(("плато параметров", 0.20, 0.5 * pl + 0.5 * fp))
+        parts.append((WEIGHTS["6"], 0.5 * pl + 0.5 * fp))
 
     oos = by.get("1")
     if oos and "retention" in oos.detail:
-        parts.append(("сохранение на OOS", 0.15,
-                      float(np.clip(oos.detail["retention"], 0, 1))))
+        parts.append((WEIGHTS["1"], float(np.clip(oos.detail["retention"], 0, 1))))
 
     mt = by.get("5")
     if mt and "dsr" in mt.detail:
-        parts.append(("deflated Sharpe", 0.10, float(np.clip(mt.detail["dsr"], 0, 1))))
+        parts.append((WEIGHTS["5"], float(np.clip(mt.detail["dsr"], 0, 1))))
 
-    if not parts:
-        return 0.0
-    wsum = sum(w for _, w, _ in parts)
-    return float(sum(w * v for _, w, v in parts) / wsum)
+    return float(sum(w * v for w, v in parts) / sum(WEIGHTS.values()))
 
 
 def run_filter(dataset: dict, hypo: Hypothesis,
@@ -192,6 +197,15 @@ def run_filter(dataset: dict, hypo: Hypothesis,
 
 
 def _finish(v: FilterVerdict, t_start: float) -> FilterVerdict:
+    # гипотеза, отсеянная рано, не доходит до сводных метрик по корзине —
+    # показываем то, что успели измерить (OOS-часть), а не нули: нули читаются
+    # как «сделок не было», что неправда и маскирует поломанный блок
+    if not v.metrics.get("n_trades"):
+        for b in v.barriers:
+            if b.name.startswith("1.") and "test" in b.detail:
+                v.metrics = dict(b.detail["test"])
+                v.metrics["scope"] = "только OOS-часть (гипотеза отсеяна рано)"
+                break
     v.survived = len(v.barriers) == 7 and all(b.passed for b in v.barriers)
     v.robustness = robustness_score(v.barriers)
     v.elapsed_s = time.time() - t_start
