@@ -126,7 +126,13 @@ def run_symbols(dataset: dict, cfg: StrategyConfig, symbols=None,
             if ts_to is not None:
                 m &= df["ts"].to_numpy() < ts_to
             df = df[m].reset_index(drop=True)
-            df.attrs["tf"] = d["ohlcv"].attrs.get("tf")
+            # attrs теряются при нарезке — переносим вручную. refs НЕ режем:
+            # межрыночные блоки выравнивают ведущий инструмент по таймстампу,
+            # поэтому лишние бары впереди безвредны, а обрезка сзади сломала бы
+            # причинность окна
+            for key in ("tf", "has_volume", "refs"):
+                if key in d["ohlcv"].attrs:
+                    df.attrs[key] = d["ohlcv"].attrs[key]
         if len(df) < 200:
             continue
         out.append(run_backtest(df, cfg, sym, funding=d.get("funding"),

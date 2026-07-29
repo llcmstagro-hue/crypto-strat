@@ -112,6 +112,60 @@ def regime_verdict(breakdown: dict, min_trades: int = 20,
             "concentration": concentration}
 
 
+# --------------------------------------------------------------------------- #
+# СВЕЖЕСТЬ ЭДЖА — обязательное условие достойности, наравне с 7 барьерами
+# --------------------------------------------------------------------------- #
+FRESH_FROM = "2024-01-01"      # «последний режим»
+RECENT_FROM = "2025-01-01"     # ближний хвост
+
+
+def freshness_check(results: list, min_trades: int = 30) -> dict:
+    """Жив ли эдж СЕЙЧАС, а не только в истории.
+
+    Главный урок прогона по пробою: стратегия может иметь безупречную
+    девятилетнюю статистику и при этом быть мёртвой последние два года.
+    Исторический эдж не даёт права на форвард — рынок уже другой.
+
+    Требуется положительная ожидаемость И в окне 2024+, И в окне 2025+.
+    Второе окно уже и шумнее, но именно оно отвечает на вопрос «работает ли
+    прямо сейчас»; первое даёт достаточную выборку, чтобы это не было
+    гаданием по десяти сделкам.
+
+    Провал = вердикт `historical-only edge`. Это НЕ смягчение и НЕ ужесточение
+    порогов барьеров — это отдельное требование поверх них.
+    """
+    out = {}
+    for key, start in (("fresh_2024", FRESH_FROM), ("recent_2025", RECENT_FROM)):
+        ts0 = _ms(start)
+        R = []
+        for r in results:
+            if not r.n_trades:
+                continue
+            t = r.trades
+            m = t["entry_ts"] >= ts0
+            if m.any():
+                R.append(t.loc[m, "R"].to_numpy())
+        arr = np.concatenate(R) if R else np.array([])
+        mm = trade_metrics(arr)
+        out[key] = {"from": start, "n": mm["n_trades"],
+                    "expectancy_R": round(mm["expectancy_R"], 4),
+                    "profit_factor": round(mm["profit_factor"], 3),
+                    "total_R": round(mm["total_R"], 1)}
+
+    f, rc = out["fresh_2024"], out["recent_2025"]
+    checks = {
+        f"выборка с {FRESH_FROM} >= {min_trades}": f["n"] >= min_trades,
+        f"ожидаемость с {FRESH_FROM} > 0": f["expectancy_R"] > 0,
+        f"ожидаемость с {RECENT_FROM} > 0": rc["expectancy_R"] > 0,
+    }
+    passed = all(checks.values())
+    note = (f"с {FRESH_FROM}: n={f['n']} exp={f['expectancy_R']:+.3f}R "
+            f"PF={f['profit_factor']:.2f} | с {RECENT_FROM}: n={rc['n']} "
+            f"exp={rc['expectancy_R']:+.3f}R PF={rc['profit_factor']:.2f}")
+    return {"passed": passed, "checks": checks, "note": note, "windows": out,
+            "verdict": "ok" if passed else "historical-only edge"}
+
+
 def format_regimes(breakdown: dict) -> str:
     L = [f"{'режим':<20}{'тип':<10}{'сделок':>8}{'exp,R':>9}{'PF':>7}{'итог,R':>9}"]
     L.append("-" * 63)

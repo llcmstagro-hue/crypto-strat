@@ -305,6 +305,117 @@ def entry_rsi_divergence(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
     return sorted(intents, key=lambda x: x.signal_bar)
 
 
+def entry_squeeze_breakout(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """Сжатие волатильности -> расширение (Bollinger squeeze).
+
+    Механизм структурно ДРУГОЙ, чем у пробоя уровня. Пробой Дончиана говорит
+    «цена вышла за экстремум». Здесь условие на РЕЖИМ ВОЛАТИЛЬНОСТИ: полосы
+    Боллинджера сжались до нижнего перцентиля собственного диапазона, то есть
+    рынок «сжал пружину». Вход — на первом закрытии за полосой после сжатия.
+
+    Формализация по описанию источников: ширина полос в нижних N% своего
+    диапазона за lookback баров И ATR ниже своей средней; сигнал — закрытие
+    за полосой.
+    """
+    _, h, l, c = _arrays(df)
+    n = len(df)
+    period = int(p.get("period", 20))
+    k = float(p.get("k", 2.0))
+    lookback = int(p.get("squeeze_lookback", 120))
+    pct = float(p.get("squeeze_pct", 0.30))
+
+    s = pd.Series(c)
+    mid = s.rolling(period, min_periods=period).mean()
+    sd = s.rolling(period, min_periods=period).std(ddof=0)
+    width = (2 * k * sd / mid).to_numpy()          # относительная ширина полос
+    up = (mid + k * sd).to_numpy()
+    dn = (mid - k * sd).to_numpy()
+
+    # порог сжатия — нижний перцентиль ширины за lookback, БЕЗ текущего бара
+    thr = pd.Series(width).shift(1).rolling(lookback, min_periods=lookback) \
+            .quantile(pct).to_numpy()
+    a = ind.atr(h, l, c, int(p.get("atr_period", 14)))
+    a_ma = ind.sma(a, int(p.get("atr_ma", 20)))
+
+    intents = []
+    for i in range(1, n):
+        if np.isnan(thr[i]) or np.isnan(width[i]) or np.isnan(a_ma[i]):
+            continue
+        squeezed = width[i] <= thr[i] and a[i] <= a_ma[i]
+        if not squeezed:
+            continue
+        if c[i] > up[i] and c[i - 1] <= up[i - 1]:
+            intents.append(OrderIntent(+1, i, "market", None, {"type": "none"}, 1,
+                                       meta={"block": "squeeze_breakout"}))
+        elif c[i] < dn[i] and c[i - 1] >= dn[i - 1]:
+            intents.append(OrderIntent(-1, i, "market", None, {"type": "none"}, 1,
+                                       meta={"block": "squeeze_breakout"}))
+    return intents
+
+
+def entry_ttm_squeeze(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """TTM Squeeze: полосы Боллинджера ВНУТРИ канала Кельтнера = сжатие.
+
+    Сигнал не на самом сжатии, а на его ОТПУСКАНИИ (полосы выходят за Кельтнер),
+    направление берётся по знаку моментума. Отличие от `squeeze_breakout`:
+    там сжатие меряется перцентилем собственной ширины, здесь — сравнением
+    двух каналов разной природы (стандартное отклонение против ATR).
+    """
+    _, h, l, c = _arrays(df)
+    n = len(df)
+    period = int(p.get("period", 20))
+    k = float(p.get("k", 2.0))
+    mult = float(p.get("kc_mult", 1.5))
+    mom_p = int(p.get("mom_period", 12))
+
+    s = pd.Series(c)
+    mid = s.rolling(period, min_periods=period).mean().to_numpy()
+    sd = s.rolling(period, min_periods=period).std(ddof=0).to_numpy()
+    bb_up, bb_dn = mid + k * sd, mid - k * sd
+    kc_up, _, kc_dn = ind.keltner(h, l, c, period, int(p.get("atr_period", 14)),
+                                  mult, exclude_current=False)
+
+    on = (bb_up < kc_up) & (bb_dn > kc_dn)          # сжатие включено
+    intents = []
+    for i in range(mom_p + 1, n):
+        if np.isnan(bb_up[i]) or np.isnan(kc_up[i]) or np.isnan(kc_up[i - 1]):
+            continue
+        # отпускание: на предыдущем баре сжатие было, на текущем — нет
+        if on[i - 1] and not on[i]:
+            mom = c[i] - c[i - mom_p]
+            if mom > 0:
+                intents.append(OrderIntent(+1, i, "market", None, {"type": "none"}, 1,
+                                           meta={"block": "ttm_squeeze"}))
+            elif mom < 0:
+                intents.append(OrderIntent(-1, i, "market", None, {"type": "none"}, 1,
+                                           meta={"block": "ttm_squeeze"}))
+    return intents
+
+
+def entry_nr_expansion(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """Самый узкий бар за N периодов -> пробой его диапазона (схема NR7).
+
+    Ещё один срез той же идеи, но без индикаторов вообще: узкий бар = пауза,
+    выход за его границы = возобновление движения. Заявки стоп-типа по обе
+    стороны бара, живут ограниченное число баров.
+    """
+    _, h, l, c = _arrays(df)
+    n = len(df)
+    N = int(p.get("lookback", 7))
+    valid = int(p.get("valid_bars", 3))
+    rng = h - l
+    intents = []
+    for i in range(N, n):
+        window = rng[i - N + 1:i + 1]
+        if rng[i] != window.min() or (window == rng[i]).sum() != 1 or rng[i] <= 0:
+            continue
+        intents.append(OrderIntent(+1, i, "stop", float(h[i]), {"type": "none"},
+                                   valid, meta={"block": "nr_expansion"}))
+        intents.append(OrderIntent(-1, i, "stop", float(l[i]), {"type": "none"},
+                                   valid, meta={"block": "nr_expansion"}))
+    return intents
+
+
 def entry_rsi_threshold(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
     """Вход по пересечению порога RSI (возврат к среднему, схема Connors RSI-2).
 
@@ -328,9 +439,101 @@ def entry_rsi_threshold(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
     return intents
 
 
+# --------------------------------------------------------------------------- #
+# МЕЖРЫНОЧНЫЕ БЛОКИ — читают ВТОРОЙ инструмент (ведущий)
+# --------------------------------------------------------------------------- #
+class MissingReferenceError(RuntimeError):
+    """Межрыночный блок запрошен без данных ведущего инструмента."""
+
+
+def _ref_close(df: pd.DataFrame, ref_name: str) -> np.ndarray:
+    """Закрытия ведущего инструмента, выровненные на бары текущего.
+
+    Выравнивание по ТАЙМСТАМПУ, а не по позиции: у инструментов разная длина
+    истории (SOL с 2020, BTC с 2017), и позиционное совмещение сдвинуло бы
+    ряды на годы.
+
+    Причинность: берётся последний бар ведущего с ts <= ts текущего бара.
+    Оба инструмента на одном ТФ закрываются одновременно, поэтому значение
+    известно на закрытии текущего бара — а вход всё равно не раньше следующего.
+    """
+    refs = df.attrs.get("refs") or {}
+    ref = refs.get(ref_name)
+    if ref is None or not len(ref):
+        raise MissingReferenceError(
+            f"нет данных ведущего инструмента {ref_name} — межрыночный блок "
+            f"невозможен")
+    r_ts = ref["ts"].to_numpy()
+    r_c = ref["close"].to_numpy()
+    pos = np.searchsorted(r_ts, df["ts"].to_numpy(), side="right") - 1
+    out = np.full(len(df), np.nan)
+    ok = pos >= 0
+    out[ok] = r_c[pos[ok]]
+    return out
+
+
+def entry_ref_momentum(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """Импульс ВЕДУЩЕГО инструмента как сигнал на ведомом (спилловер).
+
+    Гипотеза: информация распространяется по рынку с задержкой из-за
+    ограниченного внимания инвесторов, поэтому движение BTC предсказывает
+    движение альтов в ТУ ЖЕ сторону. Сигнал на пересечении порога, чтобы
+    одно событие не порождало серию входов.
+    """
+    ref_name = p.get("ref", "BTCUSDT")
+    lb = int(p.get("lookback", 6))
+    thr = float(p.get("threshold", 0.03))
+    sign = -1 if bool(p.get("seesaw", False)) else 1
+    rc = _ref_close(df, ref_name)
+    block = "ref_seesaw" if sign < 0 else "ref_momentum"
+
+    intents, prev = [], 0
+    for i in range(lb, len(df)):
+        if np.isnan(rc[i]) or np.isnan(rc[i - lb]) or rc[i - lb] <= 0:
+            continue
+        ret = rc[i] / rc[i - lb] - 1.0
+        cur = 1 if ret > thr else (-1 if ret < -thr else 0)
+        if cur != 0 and cur != prev:
+            intents.append(OrderIntent(sign * cur, i, "market", None,
+                                       {"type": "none"}, 1,
+                                       meta={"block": block, "ref": ref_name,
+                                             "ref_ret": float(ret)}))
+        prev = cur
+    return intents
+
+
+def entry_ref_seesaw(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """«Качели» (SSRN 3465924): крупные монеты предсказывают альты В МИНУС.
+
+    Прямо противоположно народному «BTC растёт — альты растут». Академия
+    объясняет это перетоком внимания: капитал бежит В крупные монеты и ИЗ них,
+    а не разливается равномерно. Проверяем обе версии — какая из них верна,
+    решают барьеры, а не то, какая приятнее звучит.
+    """
+    return entry_ref_momentum(df, {**p, "seesaw": True})
+
+
+def filter_ref_trend(df: pd.DataFrame, p: dict):
+    """Фильтр по тренду ведущего инструмента: торгуем альт только по
+    направлению BTC. Не сигнал, а разрешение — комбинируется с любым входом."""
+    ref_name = p.get("ref", "BTCUSDT")
+    rc = _ref_close(df, ref_name)
+    e = ind.ema(rc[~np.isnan(rc)], int(p.get("ema_period", 50)))
+    full = np.full(len(df), np.nan)
+    full[~np.isnan(rc)] = e
+    up = (~np.isnan(full)) & (rc > full)
+    dn = (~np.isnan(full)) & (rc < full)
+    return up, dn
+
+
 ENTRY_BLOCKS = {
     "order_block": entry_order_block,
     "rsi_threshold": entry_rsi_threshold,
+    "squeeze_breakout": entry_squeeze_breakout,
+    "ttm_squeeze": entry_ttm_squeeze,
+    "nr_expansion": entry_nr_expansion,
+    "ref_momentum": entry_ref_momentum,
+    "ref_seesaw": entry_ref_seesaw,
     "donchian_breakout": entry_donchian_breakout,
     "keltner_breakout": entry_keltner_breakout,
     "tsmom": entry_tsmom,
@@ -432,6 +635,7 @@ def filter_ma_side(df: pd.DataFrame, p: dict):
 FILTER_BLOCKS = {
     "htf_trend": filter_htf_trend,
     "ma_side": filter_ma_side,
+    "ref_trend": filter_ref_trend,
     "session": filter_session,
     "atr_regime": filter_atr_regime,
     "volume": filter_volume,

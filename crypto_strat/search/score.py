@@ -35,14 +35,30 @@ BLOCK_TYPE = {
     "order_block": "SMC",
     "fvg": "SMC",
     "level_retest": "SMC",
+    # новые классы механизмов
+    "squeeze_breakout": "volatility",
+    "ttm_squeeze": "volatility",
+    "nr_expansion": "volatility",
+    "ref_momentum": "cross-market",
+    "ref_seesaw": "cross-market",
 }
+
+
+def classify_with_filters(cfg) -> str:
+    """Тип по входному блоку, но межрыночный ФИЛЬТР перевешивает: стратегия,
+    берущая пробой альта только по тренду BTC, — это межрыночная идея, а не
+    просто пробой."""
+    base = BLOCK_TYPE.get(cfg.entry["type"], "other")
+    if any(f["type"] == "ref_trend" for f in cfg.filters):
+        return "cross-market" if base != "cross-market" else base
+    return base
 
 # Блоки, требующие объёма
 VOLUME_BLOCKS = {"volume"}
 
 
 def classify(cfg: StrategyConfig) -> str:
-    return BLOCK_TYPE.get(cfg.entry["type"], "other")
+    return classify_with_filters(cfg)
 
 
 # --------------------------------------------------------------------------- #

@@ -132,7 +132,9 @@ def mutation_catalog() -> list[Mutation]:
 # --------------------------------------------------------------------------- #
 def evolve(seed_cfg: StrategyConfig, seed_idea: Idea, seed_grid: dict,
            mutations: list[Mutation] | None = None,
-           keep_seed_grid_keys: tuple = ("entry",)) -> list[tuple[Hypothesis, Idea]]:
+           keep_seed_grid_keys: tuple = ("entry",),
+           primary: str | None = None,
+           exclude_symbols: tuple = ()) -> list[tuple[Hypothesis, Idea]]:
     """Порождает независимых кандидатов из семени.
 
     keep_seed_grid_keys — какие части родительской сетки сохранить (обычно
@@ -164,7 +166,12 @@ def evolve(seed_cfg: StrategyConfig, seed_idea: Idea, seed_grid: dict,
             sources=list(seed_idea.sources) + ["Evolution (р.6.7), безопасная версия"],
             cross_market=seed_idea.cross_market,
         )
-        out.append((Hypothesis(cfg, grid=grid,
-                               source=f"Evolution от {seed_cfg.name}: {m.key}",
-                               notes=m.rationale, grid_cap=40), idea))
+        h = Hypothesis(cfg, grid=grid,
+                       source=f"Evolution от {seed_cfg.name}: {m.key}",
+                       notes=m.rationale, grid_cap=40)
+        # межрыночные гипотезы теряют смысл без своего ведущего инструмента:
+        # вариант обязан наследовать НАБОР ДАННЫХ родителя (но не валидность)
+        h.primary = primary
+        h.exclude_symbols = exclude_symbols
+        out.append((h, idea))
     return out

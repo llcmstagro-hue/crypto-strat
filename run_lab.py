@@ -34,22 +34,44 @@ import time
 from crypto_strat.data.loader import load_basket
 from crypto_strat.knowledge.db import KnowledgeBase, Record
 from crypto_strat.search.evolution import evolve
-from crypto_strat.search.pool import base_pool, evolution_seeds
+from crypto_strat.search.pool import base_pool, evolution_seeds, new_classes_pool
 from crypto_strat.search.score import Idea, classify, gate
 from crypto_strat.validation.barriers import Thresholds, run_symbols, thresholds_for_tf
 from crypto_strat.validation.filter import run_filter
 from crypto_strat.validation.hypothesis import TrialLog
 from crypto_strat.validation.regimes import (regime_breakdown, regime_verdict,
-                                             format_regimes)
+                                             format_regimes, freshness_check)
 
 
-def build_pool(with_evolution: bool = True):
-    pool = base_pool()
+EVO_SEEDS_NEW = ("vol_squeeze_breakout", "vol_ttm_squeeze", "vol_nr_expansion",
+                 "xmkt_btc_spillover", "xmkt_btc_seesaw", "xmkt_donchian_btc_filter")
+
+
+def build_pool(with_evolution: bool = True, classes: str = "all"):
+    """classes: all | new | base.
+
+    `new` — только волатильностный и межрыночный классы. Пробой и возврат к
+    среднему изучены и закрыты (см. PROGRESS.md): гонять их снова значит
+    поднимать планку барьера 5 всем новым кандидатам без шанса узнать что-то
+    новое.
+    """
+    OLD_SEEDS = ("donchian_breakout", "keltner_breakout", "tsmom",
+                 "bb_meanrev", "order_block", "level_retest")
+    if classes == "new":
+        pool, seed_names = new_classes_pool(), EVO_SEEDS_NEW
+    elif classes == "base":
+        pool, seed_names = base_pool(), OLD_SEEDS
+    else:
+        pool = base_pool() + new_classes_pool()
+        seed_names = OLD_SEEDS + EVO_SEEDS_NEW
+
     if not with_evolution:
         return pool
+    seeds = [(h, i) for h, i in pool if h.name in (seed_names or ())]
     grown = list(pool)
-    for h, idea in evolution_seeds(pool):
-        grown.extend(evolve(h.config, idea, h.grid))
+    for h, idea in seeds:
+        grown.extend(evolve(h.config, idea, h.grid,
+                            primary=h.primary, exclude_symbols=h.exclude_symbols))
     return grown
 
 
@@ -61,6 +83,8 @@ def main() -> int:
     ap.add_argument("--db", default="./knowledge.db")
     ap.add_argument("--trials", default="./trials_lab.json")
     ap.add_argument("--no-evolution", action="store_true")
+    ap.add_argument("--classes", default="all", choices=["all", "new", "base"],
+                    help="какие классы механизмов гонять")
     ap.add_argument("--fail-fast", action="store_true",
                     help="останавливать гипотезу на первом проваленном барьере")
     ap.add_argument("--out", default="lab_results.json")
@@ -79,7 +103,7 @@ def main() -> int:
     kb = KnowledgeBase(args.db)
     tl = TrialLog(args.trials)
     th = thresholds_for_tf(args.tf)
-    pool = build_pool(not args.no_evolution)
+    pool = build_pool(not args.no_evolution, args.classes)
 
     print("=" * 96)
     print("TRADING RESEARCH LAB — ШИРОКИЙ ПОИСК")
@@ -88,7 +112,7 @@ def main() -> int:
         print(f"  {s:<10} {n:>6} баров  {a} .. {b}")
     print(f"  объём в данных: {'есть' if has_vol else 'НЕТ (объёмные блоки исключены)'}")
     print(f"  ТФ {args.tf} | подбор параметров только на {args.primary}")
-    print(f"  гипотез в пуле: {len(pool)}  (база + Evolution)")
+    print(f"  гипотез в пуле: {len(pool)}  (классы: {args.classes} + Evolution)")
     print(f"  база знаний: {os.path.abspath(args.db)}")
     print(f"  порог Research Score: 70 | DSR: {th.dsr_min} | мин. сделок: "
           f"{th.min_trades_total}/{th.min_trades_per_symbol}")
@@ -129,7 +153,16 @@ def main() -> int:
         if g["objections"]:
             print(f"    Critic: {'; '.join(g['objections'])}")
 
-        v = run_filter(dataset, hypo, primary=[args.primary], th=th,
+        # межрыночные гипотезы работают на суженной корзине и своём primary
+        sub = {k: v_ for k, v_ in dataset.items() if k not in hypo.exclude_symbols}
+        prim = hypo.primary or args.primary
+        if prim not in sub:
+            prim = list(sub)[0]
+        if hypo.exclude_symbols:
+            print(f"    корзина: {', '.join(sub)} | подбор на {prim} "
+                  f"(ведущий инструмент исключён из ведомых)")
+
+        v = run_filter(sub, hypo, primary=[prim], th=th,
                        trial_log=tl, fail_fast=args.fail_fast, verbose=True)
 
         rec.tested = True
@@ -142,25 +175,33 @@ def main() -> int:
                         "profit_concentration")}
         rec.trials_at_test = tl.selection
 
-        # --- режимы: считаем всегда, когда есть фиксированный конфиг ---
+        # --- режимы и СВЕЖЕСТЬ: считаем всегда, когда есть фиксированный конфиг ---
         reg_pass, reg_note = False, "не считались"
+        fresh_pass, fresh_note = False, "не считалась"
         if v.best_config is not None:
-            res = run_symbols(dataset, v.best_config, list(dataset))
+            res = run_symbols(sub, v.best_config, list(sub))
             bd = regime_breakdown(res)
             rv = regime_verdict(bd)
-            rec.regimes = {"breakdown": bd["rows"], "verdict": rv}
+            fr = freshness_check(res)
+            rec.regimes = {"breakdown": bd["rows"], "verdict": rv, "freshness": fr}
             reg_pass, reg_note = rv["passed"], rv["note"]
+            fresh_pass, fresh_note = fr["passed"], fr["note"]
             if v.survived or v.n_passed >= 5:
                 print("    режимы:")
                 for line in format_regimes(bd).splitlines():
                     print("      " + line)
                 print(f"    {'✅' if reg_pass else '❌'} режимы: {reg_note}")
+                print(f"    {'✅' if fresh_pass else '❌'} свежесть: {fresh_note}")
 
-        is_worthy = v.survived and reg_pass
+        is_worthy = v.survived and reg_pass and fresh_pass
         rec.survived = bool(is_worthy)
         if is_worthy:
-            rec.reason = "прошла все 7 барьеров И держит эдж в разных режимах"
+            rec.reason = ("прошла все 7 барьеров, держит эдж в разных режимах "
+                          "И эдж жив сейчас")
             worthy.append((hypo, v, rec))
+        elif v.survived and reg_pass and not fresh_pass:
+            # ровно тот случай, ради которого критерий и введён
+            rec.reason = f"historical-only edge: 7/7 и режимы ОК, но эдж мёртв сейчас — {fresh_note}"
         elif v.survived:
             rec.reason = f"7/7 барьеров, но НЕ прошла по режимам: {reg_note}"
         else:
@@ -170,10 +211,13 @@ def main() -> int:
         for fl in v.flags:
             print(f"    🚩 {fl}")
         print(f"    ИТОГ: {'ДОСТОЙНАЯ' if is_worthy else ('7/7 но режимы' if v.survived else 'отсев')}"
-              f" ({v.n_passed}/7, робастность {v.robustness:.3f})")
+              f" ({v.n_passed}/7, робастность {v.robustness:.3f}"
+              + (", эдж мёртв сейчас" if (v.survived and reg_pass and not fresh_pass) else "")
+              + ")")
         results.append({"name": hypo.name, "type": stype, "score": g["score"],
                         "barriers": v.n_passed, "robustness": rec.robustness,
-                        "regimes_ok": reg_pass, "worthy": is_worthy,
+                        "regimes_ok": reg_pass, "fresh_ok": fresh_pass,
+                        "worthy": is_worthy,
                         "metrics": rec.metrics,
                         "failed": rec.failed_barriers,
                         "config": v.best_config.to_dict() if v.best_config else None})

@@ -110,7 +110,26 @@ class KnowledgeBase:
         return dict(row) if row else None
 
     def save(self, rec: Record) -> int:
-        """Пишет/обновляет запись. Возвращает id."""
+        """Пишет/обновляет запись. Возвращает id.
+
+        Дубликат НЕ затирает оригинал. Отпечаток логики у них общий, а ключ в
+        таблице — (fingerprint, tf), поэтому наивный upsert подменял бы
+        ПРОТЕСТИРОВАННУЮ запись НЕпротестированной: имя, метрики и вердикт
+        оригинала исчезали, и в базе оставался «дубликат самого себя».
+        Именно так однажды пропал базовый order_block, оставив в базе только
+        своих потомков по Evolution.
+        """
+        prev = self.seen(rec.fingerprint, rec.tf)
+        if prev and prev.get("tested") and not rec.tested:
+            # оригинал уже прогнан — новый экземпляр просто отмечаем дубликатом
+            objs = sorted(set(json.loads(prev.get("critic_objections") or "[]")
+                              + [f"дубликат отклонён: {rec.name}"]))
+            self.conn.execute(
+                "UPDATE hypotheses SET critic_objections=? WHERE id=?",
+                (json.dumps(objs, ensure_ascii=False), prev["id"]))
+            self.conn.commit()
+            return int(prev["id"])
+
         payload = (
             rec.fingerprint, rec.name, rec.source, rec.strategy_type, rec.generation,
             rec.tf, json.dumps(rec.config, ensure_ascii=False),

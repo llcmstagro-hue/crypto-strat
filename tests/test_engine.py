@@ -44,19 +44,54 @@ CONFIGS = [
      "stop": {"type": "block", "params": {}},
      "exit": {"type": "fixed_rr", "params": {"rr": 2.0, "max_bars": 80}},
      "filters": [{"type": "atr_regime", "params": {"min_pct": 0.001, "max_pct": 0.05}}]},
+    # новые классы: волатильностный и межрыночный
+    {"name": "squeeze", "entry": {"type": "squeeze_breakout",
+                                  "params": {"squeeze_lookback": 120, "squeeze_pct": 0.3}},
+     "stop": {"type": "atr", "params": {"period": 14, "mult": 2.0}},
+     "exit": {"type": "trailing_atr", "params": {"period": 14, "mult": 3.0, "max_bars": 200}},
+     "filters": []},
+    {"name": "ttm", "entry": {"type": "ttm_squeeze", "params": {}},
+     "stop": {"type": "atr", "params": {"period": 14, "mult": 2.0}},
+     "exit": {"type": "fixed_rr", "params": {"rr": 2.0, "max_bars": 100}},
+     "filters": []},
+    {"name": "nr", "entry": {"type": "nr_expansion", "params": {"lookback": 7}},
+     "stop": {"type": "atr", "params": {"period": 14, "mult": 2.0}},
+     "exit": {"type": "trailing_atr", "params": {"period": 14, "mult": 3.0, "max_bars": 200}},
+     "filters": []},
+    {"name": "xmkt", "entry": {"type": "ref_momentum",
+                               "params": {"ref": "REF", "lookback": 6, "threshold": 0.03}},
+     "stop": {"type": "atr", "params": {"period": 14, "mult": 2.0}},
+     "exit": {"type": "trailing_atr", "params": {"period": 14, "mult": 3.0, "max_bars": 200}},
+     "filters": [{"type": "ref_trend", "params": {"ref": "REF", "ema_period": 50}}]},
 ]
+
+
+def _with_ref(df):
+    """Прикрепляет ведущий инструмент — коррелированный, но не идентичный ряд."""
+    ref = make_ohlcv(n=len(df), regime="edge", seed=999, price0=1000.0)
+    ref = ref.iloc[:len(df)].copy()
+    ref["ts"] = df["ts"].to_numpy()
+    df = df.copy()
+    df.attrs["refs"] = {"REF": ref[["ts", "close"]]}
+    return df
 
 
 def test_no_lookahead():
     """Обрезка ряда не должна менять уже состоявшиеся сделки."""
-    df = make_ohlcv(n=8000, regime="edge", seed=17)
+    base = make_ohlcv(n=8000, regime="edge", seed=17)
+    df = _with_ref(base)
     fund = make_funding(df)
     cut = 5000
 
     for d in CONFIGS:
         cfg = StrategyConfig.from_dict(dict(d))
         full = run_backtest(df, cfg, "T", funding=fund)
-        trunc = run_backtest(df.iloc[:cut].reset_index(drop=True), cfg, "T", funding=fund)
+        # обрезанный ряд получает ПОЛНЫЙ ведущий инструмент — ровно так и
+        # бывает в бою (BTC длиннее альта). Если блок выравнивает не по
+        # таймстампу, а по позиции, тест это поймает
+        cut_df = df.iloc[:cut].reset_index(drop=True)
+        cut_df.attrs["refs"] = df.attrs["refs"]
+        trunc = run_backtest(cut_df, cfg, "T", funding=fund)
 
         # сравниваем только то, что закрылось с запасом до точки обрезки:
         # у обрезанного ряда последняя сделка принудительно закрыта по end_of_data
@@ -80,7 +115,7 @@ def test_no_lookahead():
 
 def test_entry_not_before_next_bar():
     """Вход не может произойти на баре, где возник сигнал."""
-    df = make_ohlcv(n=6000, regime="edge", seed=5)
+    df = _with_ref(make_ohlcv(n=6000, regime="edge", seed=5))
     for d in CONFIGS:
         cfg = StrategyConfig.from_dict(dict(d))
         r = run_backtest(df, cfg, "T")

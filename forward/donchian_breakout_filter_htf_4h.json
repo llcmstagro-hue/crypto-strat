@@ -1,0 +1,97 @@
+{
+  "name": "donchian_breakout+filter_htf",
+  "config": {
+    "name": "donchian_breakout+filter_htf",
+    "entry": {
+      "type": "donchian_breakout",
+      "params": {
+        "period": 20
+      }
+    },
+    "stop": {
+      "type": "atr",
+      "params": {
+        "period": 14,
+        "mult": 2.0
+      }
+    },
+    "exit": {
+      "type": "trailing_atr",
+      "params": {
+        "period": 14,
+        "mult": 3.0,
+        "max_bars": 240
+      }
+    },
+    "direction": "both",
+    "timeframe": "4h",
+    "filters": [
+      {
+        "type": "htf_trend",
+        "params": {
+          "factor": 6,
+          "ema_period": 50
+        }
+      }
+    ],
+    "sizing": {
+      "risk_pct": 0.01,
+      "max_leverage": 100.0
+    },
+    "costs": {
+      "fee_bps_per_side": 6.0,
+      "slip_bps_per_side": 9.0,
+      "funding_default_8h": 0.0001
+    },
+    "meta": {
+      "source": "Kaufman, Trading Systems and Methods; система Дончиана/«черепах»",
+      "rationale": "Цена, вышедшая за экстремум N последних баров, чаще продолжает движение, чем разворачивается: пробой выбивает стопы противоположной стороны и запускает поток вынужденных заявок. Плюс участники, ждавшие подтверждения, входят именно на пробое. Механизм не зависит от инструмента.",
+      "evolution": "filter_htf",
+      "parent": "donchian_breakout"
+    }
+  },
+  "tf": "4h",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "BNBUSDT",
+    "DOGEUSDT"
+  ],
+  "frozen_at": "2026-07-29T13:24:32+00:00",
+  "frozen_data_end": "2026-07-29",
+  "status": "paper-forward",
+  "admission": "НЕ ПРОШЛА ФИЛЬТР — наблюдение без денег",
+  "why_watching": "прошла 6/7 барьеров и проверку по режимам, но эдж измеримо затух (p<0.001) и отрицателен в 2026. Наблюдаем, чтобы отличить «эдж умер» от «эдж спит».",
+  "baseline": {
+    "n_trades": 1442,
+    "winrate": 0.3432732316227462,
+    "profit_factor": 1.6562232109854493,
+    "expectancy_R": 0.37723179601268775,
+    "sharpe_trade": 0.1304305477447082,
+    "max_dd_R": 34.93351325519808,
+    "max_loss_streak": 15
+  },
+  "monte_carlo": {
+    "n_trades_baseline": 1442,
+    "horizon": 200,
+    "expectancy_R": 0.37723179601268775,
+    "winrate": 0.3432732316227462,
+    "dd_R": {
+      "p50": 16.240948882730372,
+      "p90": 26.220163909900098,
+      "p95": 30.24731689418282,
+      "p99": 38.95816775183303,
+      "max": 68.74978823776856
+    },
+    "loss_streak": {
+      "p50": 10.0,
+      "p95": 16.0,
+      "p99": 20.0,
+      "max": 38
+    },
+    "yellow_dd_R": 30.24731689418282,
+    "red_dd_R": 38.95816775183303,
+    "normal_loss_streak_p95": 16.0
+  }
+}

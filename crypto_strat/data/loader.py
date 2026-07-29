@@ -161,7 +161,24 @@ def load_basket(data_dir: str = "./data", tf: str = "1h",
                     funding = load_funding_csv(os.path.join(data_dir, f))
                     break
         out[sym] = {"ohlcv": ohlcv, "funding": funding}
+
+    attach_references(out)
     return out
+
+
+def attach_references(basket: dict, refs: tuple = ("BTCUSDT",)) -> None:
+    """Кладёт ведущие инструменты в attrs каждого элемента корзины.
+
+    Нужно межрыночным блокам (BTC как ведущий для альтов). Выравнивание
+    делает сам блок — по таймстампу, а не по позиции, потому что истории
+    у инструментов разной длины.
+    """
+    available = {r: basket[r]["ohlcv"][["ts", "close"]].copy()
+                 for r in refs if r in basket}
+    if not available:
+        return
+    for sym, d in basket.items():
+        d["ohlcv"].attrs["refs"] = available
 
 
 def resample_ohlcv(df: pd.DataFrame, tf_from: str, tf_to: str,

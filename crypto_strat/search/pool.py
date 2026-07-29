@@ -218,3 +218,172 @@ def evolution_seeds(pool: list[tuple[Hypothesis, Idea]],
     на истории: выбирать семена по прошлому результату — это и есть та самая
     ядовитая версия Evolution из р.6.7."""
     return [(h, i) for h, i in pool if h.name in names]
+
+
+# --------------------------------------------------------------------------- #
+# НОВЫЕ КЛАССЫ МЕХАНИЗМОВ
+# Пробой уровня и возврат к среднему изучены и закрыты (см. PROGRESS.md).
+# Здесь — структурно другие механизмы, которые могли не затухнуть так же.
+# --------------------------------------------------------------------------- #
+def volatility_pool() -> list[tuple[Hypothesis, Idea]]:
+    """Класс 1: сжатие волатильности -> расширение.
+
+    Отличие от пробоя уровня принципиальное. Дончиан спрашивает «где цена
+    относительно экстремума», здесь спрашивается «в каком РЕЖИМЕ находится
+    волатильность». Сигналом служит не преодоление уровня, а смена режима:
+    рынок сжался, значит скоро разожмётся. Это другой источник эджа, и он
+    мог пережить то, что убило пробой.
+    """
+    P = []
+    SQ_SRC = ["TTM Squeeze (Carter, Mastering the Trade)",
+              "Bollinger, Bollinger on Bands — squeeze",
+              "freqtrade / PyQuantLab: Bollinger-Keltner squeeze + ATR trailing"]
+
+    P.append(_mk(
+        "vol_squeeze_breakout",
+        {"type": "squeeze_breakout", "params": {"period": 20, "k": 2.0,
+                                                "squeeze_lookback": 120,
+                                                "squeeze_pct": 0.30,
+                                                "atr_period": 14, "atr_ma": 20}},
+        ATR_STOP, TRAIL, [],
+        {"entry.params.squeeze_pct": [0.20, 0.30, 0.40],
+         "entry.params.squeeze_lookback": [60, 120, 240],
+         "stop.params.mult": [1.5, 2.0, 2.5]},
+        Idea(rationale=(
+            "Волатильность кластеризуется и возвращается к среднему: периоды "
+            "аномально низкого разброса статистически сменяются периодами "
+            "высокого. Пока рынок сжат, позиции накапливаются по обе стороны "
+            "узкого диапазона; выход за него запускает каскад срабатываний. "
+            "Условие на РЕЖИМ волатильности, а не на положение цены."),
+             sources=SQ_SRC, cross_market=True)))
+
+    P.append(_mk(
+        "vol_ttm_squeeze",
+        {"type": "ttm_squeeze", "params": {"period": 20, "k": 2.0, "kc_mult": 1.5,
+                                           "atr_period": 14, "mom_period": 12}},
+        ATR_STOP, TRAIL, [],
+        {"entry.params.kc_mult": [1.0, 1.5, 2.0],
+         "entry.params.mom_period": [6, 12, 24],
+         "stop.params.mult": [1.5, 2.0, 2.5]},
+        Idea(rationale=(
+            "Сжатие определяется как вложение полос Боллинджера внутрь канала "
+            "Кельтнера: разброс по стандартному отклонению стал уже разброса "
+            "по ATR. Вход не на сжатии, а на его ОТПУСКАНИИ, направление — по "
+            "знаку моментума. Два независимых измерителя волатильности вместо "
+            "одного, поэтому сигнал реже и чище."),
+             sources=SQ_SRC, cross_market=True)))
+
+    P.append(_mk(
+        "vol_nr_expansion",
+        {"type": "nr_expansion", "params": {"lookback": 7, "valid_bars": 3}},
+        ATR_STOP, TRAIL, [],
+        {"entry.params.lookback": [4, 7, 14],
+         "entry.params.valid_bars": [2, 3, 5],
+         "stop.params.mult": [1.5, 2.0, 2.5]},
+        Idea(rationale=(
+            "Самый узкий бар за N периодов — пауза в движении, момент "
+            "равновесия спроса и предложения. Выход за его границы означает, "
+            "что равновесие нарушено. Идея без единого индикатора, поэтому "
+            "нечего переоптимизировать: только длина окна."),
+             sources=["Crabel, Day Trading with Short Term Price Patterns (NR7)",
+                      "классика паттернов сжатия"],
+             cross_market=True)))
+    return P
+
+
+def cross_market_pool() -> list[tuple[Hypothesis, Idea]]:
+    """Класс 2: межрыночный эффект, BTC как ведущий.
+
+    Академия даёт ДВЕ противоположные версии, и обе формализуемы:
+      * положительный спилловер — движение BTC перетекает в альты с задержкой;
+      * «качели» (seesaw, SSRN 3465924) — крупные монеты предсказывают альты
+        В МИНУС, потому что капитал перетекает В них и ИЗ них, а не разливается.
+    Какая верна — решают барьеры, а не то, какая звучит привычнее.
+
+    BTC исключён из ведомых: «импульс BTC как сигнал на BTC» это просто
+    моментум, уже проверенный.
+    """
+    P = []
+    ALTS = ("BTCUSDT",)          # что исключить из корзины ведомых
+    SEESAW = ["SSRN 3465924 Jia/Wu/Yan/Yin, A Seesaw Effect in the Cryptocurrency Market",
+              "J. Banking & Finance: cross-cryptocurrency return predictability"]
+    SPILL = ["Bitcoin's lagged effect on altcoins (DergiPark)",
+             "NARDL: asymmetric effect of bitcoin on altcoins"]
+
+    def mkx(name, entry, grid, idea, filters=None):
+        h, i = _mk(name, entry, ATR_STOP, TRAIL, filters or [], grid, idea)
+        h.primary = "ETHUSDT"          # BTC ведущий, значит подбор не на нём
+        h.exclude_symbols = ALTS
+        return h, i
+
+    P.append(mkx(
+        "xmkt_btc_spillover",
+        {"type": "ref_momentum", "params": {"ref": "BTCUSDT", "lookback": 6,
+                                            "threshold": 0.03}},
+        {"entry.params.lookback": [3, 6, 12],
+         "entry.params.threshold": [0.02, 0.03, 0.05],
+         "stop.params.mult": [1.5, 2.0, 2.5]},
+        Idea(rationale=(
+            "Информация распространяется по крипторынку неравномерно: BTC "
+            "впитывает новости первым, альты реагируют с задержкой из-за "
+            "ограниченного внимания инвесторов и меньшей ликвидности. "
+            "Гипотеза: сильное движение BTC предсказывает движение альтов в "
+            "ТУ ЖЕ сторону на горизонте нескольких баров."),
+             sources=SPILL, cross_market=False)))
+
+    P.append(mkx(
+        "xmkt_btc_seesaw",
+        {"type": "ref_seesaw", "params": {"ref": "BTCUSDT", "lookback": 6,
+                                          "threshold": 0.03}},
+        {"entry.params.lookback": [3, 6, 12],
+         "entry.params.threshold": [0.02, 0.03, 0.05],
+         "stop.params.mult": [1.5, 2.0, 2.5]},
+        Idea(rationale=(
+            "Обратная академическая версия: крупные монеты предсказывают "
+            "мелкие ОТРИЦАТЕЛЬНО. Механизм — переток внимания и капитала: "
+            "«бегство в горячие крупные монеты» и «бегство из них» двигают "
+            "альты против BTC, а не вместе с ним. Прямо противоречит народному "
+            "«BTC растёт — альты растут», и именно поэтому подлежит проверке."),
+             sources=SEESAW, cross_market=False)))
+
+    P.append(mkx(
+        "xmkt_donchian_btc_filter",
+        {"type": "donchian_breakout", "params": {"period": 20}},
+        {"entry.params.period": [20, 30, 55],
+         "filters.0.params.ema_period": [30, 50, 100],
+         "stop.params.mult": [1.5, 2.0, 2.5]},
+        Idea(rationale=(
+            "Не новый сигнал, а новый ФИЛЬТР: пробой на альте берётся только "
+            "по направлению тренда BTC. Гипотеза в том, что пробои альтов "
+            "против ведущего рынка — ложные, потому что у альтов нет "
+            "собственного потока новостей такой силы."),
+             sources=SPILL + ["комбинаторика блоков (р.6.5 п.4)"],
+             cross_market=False),
+        filters=[{"type": "ref_trend", "params": {"ref": "BTCUSDT",
+                                                  "ema_period": 50}}]))
+
+    P.append(mkx(
+        "xmkt_squeeze_btc_filter",
+        {"type": "squeeze_breakout", "params": {"period": 20, "k": 2.0,
+                                                "squeeze_lookback": 120,
+                                                "squeeze_pct": 0.30,
+                                                "atr_period": 14, "atr_ma": 20}},
+        {"entry.params.squeeze_pct": [0.20, 0.30, 0.40],
+         "filters.0.params.ema_period": [30, 50, 100],
+         "stop.params.mult": [1.5, 2.0, 2.5]},
+        Idea(rationale=(
+            "Сжатие волатильности на альте плюс разрешение по тренду BTC: "
+            "два независимых по природе условия — режим волатильности самого "
+            "инструмента и направление ведущего рынка. Комбинация двух новых "
+            "классов, а не вариация старого."),
+             sources=SQ_SRC_XM, cross_market=False),
+        filters=[{"type": "ref_trend", "params": {"ref": "BTCUSDT",
+                                                  "ema_period": 50}}]))
+    return P
+
+
+SQ_SRC_XM = ["TTM Squeeze (Carter)", "SSRN 3465924 (межрыночный эффект)"]
+
+
+def new_classes_pool() -> list[tuple[Hypothesis, Idea]]:
+    return volatility_pool() + cross_market_pool()
