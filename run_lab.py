@@ -36,7 +36,7 @@ from crypto_strat.knowledge.db import KnowledgeBase, Record
 from crypto_strat.search.evolution import evolve
 from crypto_strat.search.pool import base_pool, evolution_seeds
 from crypto_strat.search.score import Idea, classify, gate
-from crypto_strat.validation.barriers import Thresholds, run_symbols
+from crypto_strat.validation.barriers import Thresholds, run_symbols, thresholds_for_tf
 from crypto_strat.validation.filter import run_filter
 from crypto_strat.validation.hypothesis import TrialLog
 from crypto_strat.validation.regimes import (regime_breakdown, regime_verdict,
@@ -78,7 +78,7 @@ def main() -> int:
 
     kb = KnowledgeBase(args.db)
     tl = TrialLog(args.trials)
-    th = Thresholds()
+    th = thresholds_for_tf(args.tf)
     pool = build_pool(not args.no_evolution)
 
     print("=" * 96)
@@ -92,6 +92,8 @@ def main() -> int:
     print(f"  база знаний: {os.path.abspath(args.db)}")
     print(f"  порог Research Score: 70 | DSR: {th.dsr_min} | мин. сделок: "
           f"{th.min_trades_total}/{th.min_trades_per_symbol}")
+    print(f"  walk-forward: train {th.wf_train_days}д / test {th.wf_test_days}д "
+          f"(длина окна подобрана под плотность ТФ; критерии прохождения те же)")
     print("=" * 96)
 
     t_start = time.time()
@@ -136,7 +138,8 @@ def main() -> int:
         rec.robustness = round(v.robustness, 4)
         rec.metrics = {k: v.metrics.get(k) for k in
                        ("n_trades", "winrate", "profit_factor", "expectancy_R",
-                        "sharpe_trade", "total_R", "max_dd_R", "max_loss_streak")}
+                        "sharpe_trade", "total_R", "max_dd_R", "max_loss_streak",
+                        "profit_concentration")}
         rec.trials_at_test = tl.selection
 
         # --- режимы: считаем всегда, когда есть фиксированный конфиг ---
@@ -164,6 +167,8 @@ def main() -> int:
             rec.reason = f"провалила барьеры: {', '.join(rec.failed_barriers)}"
         kb.save(rec)
 
+        for fl in v.flags:
+            print(f"    🚩 {fl}")
         print(f"    ИТОГ: {'ДОСТОЙНАЯ' if is_worthy else ('7/7 но режимы' if v.survived else 'отсев')}"
               f" ({v.n_passed}/7, робастность {v.robustness:.3f})")
         results.append({"name": hypo.name, "type": stype, "score": g["score"],

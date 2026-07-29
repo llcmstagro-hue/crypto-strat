@@ -25,6 +25,7 @@ from .barriers import (
     Thresholds, BarrierResult, barrier_oos, barrier_walkforward,
     barrier_cross_instrument, barrier_min_trades, barrier_multiple_testing,
     barrier_param_stability, barrier_costs, red_flags, run_symbols, pooled_R,
+    profit_concentration,
 )
 from .hypothesis import Hypothesis, TrialLog
 
@@ -191,8 +192,10 @@ def run_filter(dataset: dict, hypo: Hypothesis,
 
     # --- итог ---
     pooled = trade_metrics(pooled_R(all_results))
+    conc = profit_concentration(all_results)
+    pooled["profit_concentration"] = conc
     verdict.metrics = pooled
-    verdict.flags = red_flags(best_cfg, pooled, b3.detail["per_symbol"], th)
+    verdict.flags = red_flags(best_cfg, pooled, b3.detail["per_symbol"], th, conc)
     return _finish(verdict, t_start)
 
 

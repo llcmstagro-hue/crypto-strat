@@ -37,7 +37,7 @@ import sys
 from crypto_strat.data.loader import load_basket
 from crypto_strat.data.synthetic import make_basket
 from crypto_strat.engine.config import StrategyConfig
-from crypto_strat.validation.barriers import Thresholds
+from crypto_strat.validation.barriers import Thresholds, thresholds_for_tf
 from crypto_strat.validation.filter import run_filter, robustness_score
 from crypto_strat.validation.hypothesis import Hypothesis, TrialLog
 
@@ -186,7 +186,7 @@ def main() -> int:
     ap.add_argument("--out", default="calibration_report.json")
     args = ap.parse_args()
 
-    th = Thresholds()
+    th = thresholds_for_tf(args.tf)
     results = {}
 
     print("=" * 78)

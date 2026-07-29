@@ -69,6 +69,31 @@ class Thresholds:
     max_rules: int = 6
 
 
+def thresholds_for_tf(tf: str) -> Thresholds:
+    """Пороги под плотность данных таймфрейма.
+
+    Меняется ТОЛЬКО длина окон walk-forward — это параметр ПРОЦЕДУРЫ, а не
+    критерий прохождения. Все пороги «пройдено/не пройдено» (минимум сделок,
+    DSR, доля положительных окон, плато, издержки) одинаковы на всех ТФ.
+
+    Зачем это нужно. На D1 окно train в 365 дней даёт 8-11 сделок при
+    минимуме отбора в 30. Тогда КАЖДЫЙ внутренний перебор возвращает -inf,
+    подбор молча откатывается к дефолтному конфигу, и барьер walk-forward
+    перестаёт что-либо проверять — при этом выглядит пройденным или нет
+    по совершенно посторонним причинам. Расширение окна возвращает барьеру
+    смысл; ценой становится меньшее число окон, и оно по-прежнему обязано
+    быть >= wf_min_windows.
+    """
+    th = Thresholds()
+    if tf == "1d":
+        th.wf_train_days = 1095     # 3 года: ~30 сделок на подбор
+        th.wf_test_days = 365
+    elif tf == "4h":
+        th.wf_train_days = 365
+        th.wf_test_days = 90
+    return th
+
+
 @dataclass
 class BarrierResult:
     name: str
@@ -152,7 +177,13 @@ def grid_search(dataset: dict, hypo: Hypothesis, symbols: list[str],
         trial_log.record(len(variants), tag or hypo.name, selection=selection)
 
     finite = [r for r in rows if np.isfinite(r["score"])]
+    # Ни один вариант не набрал минимума сделок -> выбирать не из чего, и мы
+    # молча откатываемся к дефолтному конфигу. На разреженных данных (D1) это
+    # превращает подбор в фикцию, поэтому факт отмечается явно, а не проглатывается.
+    degraded = not finite
     best = max(finite, key=lambda r: r["score"]) if finite else None
+    for r in rows:
+        r["degraded"] = degraded
     return (best["cfg"] if best else hypo.config), rows
 
 
@@ -228,8 +259,8 @@ def barrier_walkforward(dataset: dict, hypo: Hypothesis, primary: list[str],
 
     rows, oos_R = [], []
     for (a, b, c) in windows:
-        cfg, _ = grid_search(dataset, hypo, primary, a, b, trial_log,
-                             f"{hypo.name}/wf", selection=False)
+        cfg, tbl = grid_search(dataset, hypo, primary, a, b, trial_log,
+                               f"{hypo.name}/wf", selection=False)
         res = run_symbols(dataset, cfg, primary, b, c)
         R = pooled_R(res)
         m = trade_metrics(R)
@@ -239,6 +270,7 @@ def barrier_walkforward(dataset: dict, hypo: Hypothesis, primary: list[str],
             "to": pd.to_datetime(c, unit="ms", utc=True).date().isoformat(),
             "n": m["n_trades"], "expectancy_R": m["expectancy_R"],
             "sharpe": m["sharpe_trade"], "cfg": cfg.name,
+            "degraded": bool(tbl and tbl[0].get("degraded")),
         })
 
     # окна без сделок не считаем «положительными», но и в знаменатель берём:
@@ -253,10 +285,16 @@ def barrier_walkforward(dataset: dict, hypo: Hypothesis, primary: list[str],
         "суммарный OOS в плюсе": pooled["expectancy_R"] > 0,
     }
     passed = all(checks.values())
+    n_degraded = sum(1 for r in rows if r.get("degraded"))
+    checks["подбор в окнах не выродился"] = n_degraded <= len(rows) // 2
+    passed = all(checks.values())
     note = (f"{positive}/{len(rows)} окон в плюсе ({share*100:.0f}%), "
-            f"суммарно OOS exp={pooled['expectancy_R']:+.3f}R n={pooled['n_trades']}")
+            f"суммарно OOS exp={pooled['expectancy_R']:+.3f}R n={pooled['n_trades']}"
+            + (f"; ⚠️ в {n_degraded}/{len(rows)} окнах сделок не хватило на подбор "
+               f"(взят дефолтный конфиг)" if n_degraded else ""))
     return BarrierResult("2. Walk-forward", passed,
                          {"windows": rows, "share_positive": share,
+                          "degraded_windows": n_degraded,
                           "pooled": pooled, "checks": checks}, note)
 
 
@@ -481,9 +519,44 @@ def barrier_costs(dataset: dict, cfg: StrategyConfig, results: list[BacktestResu
 # --------------------------------------------------------------------------- #
 # КРАСНЫЕ ФЛАГИ (не барьер — предупреждения в отчёт, р.4)
 # --------------------------------------------------------------------------- #
+def profit_concentration(results: list[BacktestResult], top_n: int = 5) -> dict:
+    """Какая доля прибыли приходится на несколько лучших сделок.
+
+    Зачем отдельная метрика. Ожидаемость в R на трендследующих стратегиях с
+    трейлингом/структурным выходом легко улетает в +3R за счёт одной-двух
+    парабол (альтсезон 2021 даёт сделки на сотни R). Средняя при этом
+    выглядит великолепно, а медиана сидит в минусе. Такая «стратегия» — не
+    воспроизводимый эдж, а ставка на повторение конкретного исторического
+    события.
+    """
+    R = pooled_R(results)
+    if len(R) < 10:
+        return {"top_share": 0.0, "median_R": 0.0, "max_R": 0.0, "n": len(R)}
+    gains = R[R > 0]
+    if gains.sum() <= 0:
+        return {"top_share": 0.0, "median_R": float(np.median(R)),
+                "max_R": float(R.max()), "n": len(R)}
+    top = np.sort(gains)[-top_n:]
+    return {"top_share": float(top.sum() / gains.sum()),
+            "median_R": float(np.median(R)),
+            "max_R": float(R.max()), "n": len(R), "top_n": top_n}
+
+
 def red_flags(cfg: StrategyConfig, pooled: dict, per_symbol: list[dict],
-              th: Thresholds) -> list[str]:
+              th: Thresholds, concentration: dict | None = None) -> list[str]:
     flags = []
+    if concentration and concentration["n"] >= 10:
+        cc = concentration
+        if cc["top_share"] >= 0.5:
+            flags.append(
+                f"{cc.get('top_n', 5)} лучших сделок дают {cc['top_share']*100:.0f}% "
+                f"всей прибыли (макс. сделка {cc['max_R']:+.0f}R при медиане "
+                f"{cc['median_R']:+.2f}R) — результат держится на единичных событиях, "
+                f"а не на воспроизводимом эдже")
+        elif cc["median_R"] < 0 and pooled["expectancy_R"] > 0.5:
+            flags.append(
+                f"ожидаемость {pooled['expectancy_R']:+.2f}R при ОТРИЦАТЕЛЬНОЙ медиане "
+                f"{cc['median_R']:+.2f}R — среднее тянут редкие крупные выигрыши")
     if cfg.n_rules() > th.max_rules and pooled["n_trades"] < 300:
         flags.append(f"правил {cfg.n_rules()} (> {th.max_rules}) при "
                      f"{pooled['n_trades']} сделках — много условий на малой выборке")

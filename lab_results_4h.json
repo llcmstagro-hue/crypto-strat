@@ -61,7 +61,7 @@
       "всего": 9,
       "тестировано": 9,
       "выжило": 0,
-      "ср_барьеров": 3.89,
+      "ср_барьеров": 3.78,
       "ср_робастность": 0.632
     },
     {
@@ -88,7 +88,7 @@
     ],
     [
       "2. Walk-forward",
-      44
+      45
     ],
     [
       "1. Out-of-sample",
@@ -124,7 +124,14 @@
         "sharpe_trade": 0.12847630047372355,
         "total_R": 208.35310744516755,
         "max_dd_R": 9.736629085508213,
-        "max_loss_streak": 12
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.09549816220113509,
+          "median_R": -0.17865496932766586,
+          "max_R": 14.396993409476892,
+          "n": 1471,
+          "top_n": 5
+        }
       },
       "failed": [
         "5. Поправка на multiple testing"
@@ -189,7 +196,14 @@
         "sharpe_trade": 0.1476019254908906,
         "total_R": 472.89293241628803,
         "max_dd_R": 27.160796709089766,
-        "max_loss_streak": 13
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.1108539638404549,
+          "median_R": -0.6630577878988608,
+          "max_R": 33.282171496074774,
+          "n": 1114,
+          "top_n": 5
+        }
       },
       "failed": [
         "5. Поправка на multiple testing"
@@ -261,7 +275,14 @@
         "sharpe_trade": 0.12718171899140757,
         "total_R": 205.84107667185648,
         "max_dd_R": 9.98304373764816,
-        "max_loss_streak": 12
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.09468693082935982,
+          "median_R": -0.180655121567492,
+          "max_R": 14.38233762648495,
+          "n": 1471,
+          "top_n": 5
+        }
       },
       "failed": [
         "5. Поправка на multiple testing"
@@ -327,7 +348,14 @@
         "sharpe_trade": 0.16914687927593838,
         "total_R": 435.908969804094,
         "max_dd_R": 24.72167257047778,
-        "max_loss_streak": 12
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.1276787213872348,
+          "median_R": -0.6709518577278586,
+          "max_R": 33.28217149607477,
+          "n": 866,
+          "top_n": 5
+        }
       },
       "failed": [
         "2. Walk-forward",
@@ -402,7 +430,14 @@
         "sharpe_trade": 0.10475608760629163,
         "total_R": 134.80311774937087,
         "max_dd_R": 10.945500863220502,
-        "max_loss_streak": 14
+        "max_loss_streak": 14,
+        "profit_concentration": {
+          "top_share": 0.10576134813170458,
+          "median_R": -0.1722183091381993,
+          "max_R": 14.382337626484953,
+          "n": 1268,
+          "top_n": 5
+        }
       },
       "failed": [
         "2. Walk-forward",
@@ -467,7 +502,14 @@
         "sharpe_trade": 0.10587068663713524,
         "total_R": 136.22246122815045,
         "max_dd_R": 10.758552723417779,
-        "max_loss_streak": 14
+        "max_loss_streak": 14,
+        "profit_concentration": {
+          "top_share": 0.10667963080517025,
+          "median_R": -0.17112550848917096,
+          "max_R": 14.396993409476892,
+          "n": 1268,
+          "top_n": 5
+        }
       },
       "failed": [
         "2. Walk-forward",
@@ -531,7 +573,14 @@
         "sharpe_trade": 0.15578783553171077,
         "total_R": 808.314703004047,
         "max_dd_R": 21.523240719201,
-        "max_loss_streak": 13
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.14536849937924484,
+          "median_R": -0.9696706879588901,
+          "max_R": 60.60265474575199,
+          "n": 1097,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -597,7 +646,14 @@
         "sharpe_trade": 0.1354671712928071,
         "total_R": 379.54562763192695,
         "max_dd_R": 26.06715803884066,
-        "max_loss_streak": 13
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.10522565838516779,
+          "median_R": -0.7517471457029354,
+          "max_R": 32.228497316612376,
+          "n": 1036,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -673,7 +729,14 @@
         "sharpe_trade": 0.11144954071003357,
         "total_R": 600.5444296254137,
         "max_dd_R": 48.60061541613902,
-        "max_loss_streak": 19
+        "max_loss_streak": 19,
+        "profit_concentration": {
+          "top_share": 0.10686272978049767,
+          "median_R": -1.0424254946389544,
+          "max_R": 44.37622866143308,
+          "n": 1528,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -738,7 +801,14 @@
         "sharpe_trade": 0.08613589162361963,
         "total_R": 554.9304878306802,
         "max_dd_R": 37.444574132948105,
-        "max_loss_streak": 20
+        "max_loss_streak": 20,
+        "profit_concentration": {
+          "top_share": 0.15006605030313036,
+          "median_R": -0.39394300575122565,
+          "max_R": 66.66174447679519,
+          "n": 1861,
+          "top_n": 5
+        }
       },
       "failed": [
         "2. Walk-forward",
@@ -803,7 +873,14 @@
         "sharpe_trade": 0.10867057687832565,
         "total_R": 291.76199283605337,
         "max_dd_R": 33.80928539652328,
-        "max_loss_streak": 14
+        "max_loss_streak": 14,
+        "profit_concentration": {
+          "top_share": 0.09370016692035293,
+          "median_R": -0.6605419332727056,
+          "max_R": 33.282171496074774,
+          "n": 1168,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -878,7 +955,14 @@
         "sharpe_trade": 0.1500503083141999,
         "total_R": 262.8356574075093,
         "max_dd_R": 14.66908483615591,
-        "max_loss_streak": 12
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.28072563234747233,
+          "median_R": -0.19237877314519536,
+          "max_R": 40.806489816498136,
+          "n": 555,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -943,7 +1027,14 @@
         "sharpe_trade": 0.19598584833717989,
         "total_R": 262.3657544081407,
         "max_dd_R": 12.882828863916245,
-        "max_loss_streak": 7
+        "max_loss_streak": 7,
+        "profit_concentration": {
+          "top_share": 0.2696090119609085,
+          "median_R": -0.26453999035770726,
+          "max_R": 27.004070311549093,
+          "n": 399,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1009,7 +1100,14 @@
         "sharpe_trade": 0.12748402554593136,
         "total_R": 254.85891402254236,
         "max_dd_R": 25.20694800298682,
-        "max_loss_streak": 13
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.08459622223932542,
+          "median_R": -0.7374360821119426,
+          "max_R": 14.157446041121768,
+          "n": 876,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1084,7 +1182,14 @@
         "sharpe_trade": 0.13839904471301048,
         "total_R": 313.6351607640067,
         "max_dd_R": 30.994086012017988,
-        "max_loss_streak": 19
+        "max_loss_streak": 19,
+        "profit_concentration": {
+          "top_share": 0.22634471031121012,
+          "median_R": -1.0220157196807726,
+          "max_R": 76.32691342151088,
+          "n": 483,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1158,7 +1263,14 @@
         "sharpe_trade": 0.19764986515784977,
         "total_R": 314.5805834357092,
         "max_dd_R": 21.813099675922274,
-        "max_loss_streak": 11
+        "max_loss_streak": 11,
+        "profit_concentration": {
+          "top_share": 0.14477926542501784,
+          "median_R": -1.0144236129574478,
+          "max_R": 32.643259524813786,
+          "n": 482,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1221,7 +1333,14 @@
         "sharpe_trade": 0.0976258507160647,
         "total_R": 387.97763607925145,
         "max_dd_R": 29.062400735445067,
-        "max_loss_streak": 14
+        "max_loss_streak": 14,
+        "profit_concentration": {
+          "top_share": 0.147251952135255,
+          "median_R": -0.6241821816139154,
+          "max_R": 74.59488698545698,
+          "n": 1226,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1285,7 +1404,14 @@
         "sharpe_trade": 0.12222953106700937,
         "total_R": 632.6079549085786,
         "max_dd_R": 33.533441986098524,
-        "max_loss_streak": 17
+        "max_loss_streak": 17,
+        "profit_concentration": {
+          "top_share": 0.15597529458560622,
+          "median_R": -1.026950895153341,
+          "max_R": 69.83210356193473,
+          "n": 1119,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1350,7 +1476,14 @@
         "sharpe_trade": 0.06302267246036072,
         "total_R": 408.8009042548524,
         "max_dd_R": 42.97218786116886,
-        "max_loss_streak": 24
+        "max_loss_streak": 24,
+        "profit_concentration": {
+          "top_share": 0.13126107768096634,
+          "median_R": -0.9437020680631365,
+          "max_R": 97.93108238137437,
+          "n": 1874,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1415,7 +1548,14 @@
         "sharpe_trade": 0.10450097269099022,
         "total_R": 521.3714440330956,
         "max_dd_R": 32.59734780539878,
-        "max_loss_streak": 17
+        "max_loss_streak": 17,
+        "profit_concentration": {
+          "top_share": 0.08477328200395698,
+          "median_R": -0.7045373304642828,
+          "max_R": 33.282171496074774,
+          "n": 1865,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1489,7 +1629,14 @@
         "sharpe_trade": 0.08766122642649724,
         "total_R": 306.7473872886698,
         "max_dd_R": 34.98131045886464,
-        "max_loss_streak": 15
+        "max_loss_streak": 15,
+        "profit_concentration": {
+          "top_share": 0.08222985847844529,
+          "median_R": -0.7214864238974764,
+          "max_R": 24.864129331722857,
+          "n": 1465,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1565,7 +1712,14 @@
         "sharpe_trade": 0.1842768551085578,
         "total_R": 151.66152334159267,
         "max_dd_R": 15.368141530320429,
-        "max_loss_streak": 10
+        "max_loss_streak": 10,
+        "profit_concentration": {
+          "top_share": 0.2578285058838804,
+          "median_R": -0.9367384681826972,
+          "max_R": 23.03933249446069,
+          "n": 280,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1629,7 +1783,14 @@
         "sharpe_trade": 0.18509186700730454,
         "total_R": 153.91829492163825,
         "max_dd_R": 15.387379568516721,
-        "max_loss_streak": 10
+        "max_loss_streak": 10,
+        "profit_concentration": {
+          "top_share": 0.2633627624472691,
+          "median_R": -0.9365379138355179,
+          "max_R": 23.003948121869538,
+          "n": 280,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1694,7 +1855,14 @@
         "sharpe_trade": 0.05005792268285871,
         "total_R": 244.2204261169575,
         "max_dd_R": 53.76414799595457,
-        "max_loss_streak": 16
+        "max_loss_streak": 16,
+        "profit_concentration": {
+          "top_share": 0.07846605366664246,
+          "median_R": -0.7286401166602678,
+          "max_R": 31.08649877546365,
+          "n": 2180,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1769,7 +1937,14 @@
         "sharpe_trade": 0.03522747862941969,
         "total_R": 112.02581486850653,
         "max_dd_R": 38.014728201884154,
-        "max_loss_streak": 17
+        "max_loss_streak": 17,
+        "profit_concentration": {
+          "top_share": 0.09400373365248049,
+          "median_R": -0.33361026984125974,
+          "max_R": 27.8725371814342,
+          "n": 1972,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1839,7 +2014,14 @@
         "sharpe_trade": 0.038820518388852546,
         "total_R": 124.22627752236994,
         "max_dd_R": 35.915226783202485,
-        "max_loss_streak": 17
+        "max_loss_streak": 17,
+        "profit_concentration": {
+          "top_share": 0.09598706837732615,
+          "median_R": -0.3304036426714367,
+          "max_R": 28.537603675466627,
+          "n": 1967,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1908,7 +2090,14 @@
         "sharpe_trade": 0.07009016839246139,
         "total_R": 358.8864518194019,
         "max_dd_R": 36.213888435871866,
-        "max_loss_streak": 19
+        "max_loss_streak": 19,
+        "profit_concentration": {
+          "top_share": 0.09586500170799307,
+          "median_R": -1.048815281446139,
+          "max_R": 41.44866503395162,
+          "n": 1679,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -1968,71 +2157,6 @@
       }
     },
     {
-      "name": "tsmom+exit_rr",
-      "type": "momentum",
-      "score": 100,
-      "barriers": 4,
-      "robustness": 0.5618,
-      "regimes_ok": false,
-      "worthy": false,
-      "metrics": {
-        "n_trades": 575,
-        "winrate": 0.42782608695652175,
-        "profit_factor": 1.2590911474445399,
-        "expectancy_R": 0.15020640875099256,
-        "sharpe_trade": 0.10798866998688514,
-        "total_R": 86.36868503182072,
-        "max_dd_R": 21.555097478664045,
-        "max_loss_streak": 9
-      },
-      "failed": [
-        "1. Out-of-sample",
-        "6. Стабильность параметров",
-        "5. Поправка на multiple testing"
-      ],
-      "config": {
-        "name": "tsmom+exit_rr|lookback=180,rr=2.0",
-        "entry": {
-          "type": "tsmom",
-          "params": {
-            "lookback": 180
-          }
-        },
-        "stop": {
-          "type": "atr",
-          "params": {
-            "period": 14,
-            "mult": 3.0
-          }
-        },
-        "exit": {
-          "type": "fixed_rr",
-          "params": {
-            "rr": 2.0,
-            "max_bars": 120
-          }
-        },
-        "direction": "both",
-        "timeframe": "4h",
-        "filters": [],
-        "sizing": {
-          "risk_pct": 0.01,
-          "max_leverage": 100.0
-        },
-        "costs": {
-          "fee_bps_per_side": 6.0,
-          "slip_bps_per_side": 9.0,
-          "funding_default_8h": 0.0001
-        },
-        "meta": {
-          "source": "SSRN 2089463 Moskowitz/Ooi/Pedersen, Time Series Momentum; SSRN 4675565 Han/Kang/Ryu, крипто с издержками",
-          "rationale": "Time-series momentum: знак собственной доходности за прошлый период предсказывает знак будущей. Объясняется медленным впитыванием информации и поведением следующих за трендом участников. Документирован на десятках рынков и классов активов за 100+ лет.",
-          "evolution": "exit_rr",
-          "parent": "tsmom"
-        }
-      }
-    },
-    {
       "name": "keltner_breakout+exit_rr",
       "type": "breakout",
       "score": 100,
@@ -2048,7 +2172,14 @@
         "sharpe_trade": 0.10824612216254166,
         "total_R": 323.20740032388755,
         "max_dd_R": 32.467722012739344,
-        "max_loss_streak": 17
+        "max_loss_streak": 17,
+        "profit_concentration": {
+          "top_share": 0.010303412654962714,
+          "median_R": -1.0379497521968961,
+          "max_R": 3.0742859286236612,
+          "n": 1637,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -2115,7 +2246,14 @@
         "sharpe_trade": 0.16063851218260006,
         "total_R": 367.8381861099569,
         "max_dd_R": 17.710661961963723,
-        "max_loss_streak": 17
+        "max_loss_streak": 17,
+        "profit_concentration": {
+          "top_share": 0.22290429849583546,
+          "median_R": -1.0128888216245957,
+          "max_R": 76.32691342151088,
+          "n": 472,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -2188,7 +2326,14 @@
         "sharpe_trade": 0.08405876293567266,
         "total_R": 140.06058193718684,
         "max_dd_R": 25.86749501384554,
-        "max_loss_streak": 17
+        "max_loss_streak": 17,
+        "profit_concentration": {
+          "top_share": 0.17423490979607378,
+          "median_R": -0.37853847182543443,
+          "max_R": 20.23537965828727,
+          "n": 843,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -2252,7 +2397,14 @@
         "sharpe_trade": 0.20973806182576063,
         "total_R": 334.52174032771416,
         "max_dd_R": 21.813099675922274,
-        "max_loss_streak": 10
+        "max_loss_streak": 10,
+        "profit_concentration": {
+          "top_share": 0.1421142926139564,
+          "median_R": -1.0125835292161307,
+          "max_R": 32.643259524813786,
+          "n": 477,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -2311,6 +2463,79 @@
       }
     },
     {
+      "name": "tsmom+exit_rr",
+      "type": "momentum",
+      "score": 100,
+      "barriers": 3,
+      "robustness": 0.5618,
+      "regimes_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 575,
+        "winrate": 0.42782608695652175,
+        "profit_factor": 1.2590911474445399,
+        "expectancy_R": 0.15020640875099256,
+        "sharpe_trade": 0.10798866998688514,
+        "total_R": 86.36868503182072,
+        "max_dd_R": 21.555097478664045,
+        "max_loss_streak": 9,
+        "profit_concentration": {
+          "top_share": 0.02429368720104013,
+          "median_R": -1.0007570877486207,
+          "max_R": 2.047397826351241,
+          "n": 575,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "tsmom+exit_rr|lookback=180,rr=2.0",
+        "entry": {
+          "type": "tsmom",
+          "params": {
+            "lookback": 180
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0
+          }
+        },
+        "exit": {
+          "type": "fixed_rr",
+          "params": {
+            "rr": 2.0,
+            "max_bars": 120
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "SSRN 2089463 Moskowitz/Ooi/Pedersen, Time Series Momentum; SSRN 4675565 Han/Kang/Ryu, крипто с издержками",
+          "rationale": "Time-series momentum: знак собственной доходности за прошлый период предсказывает знак будущей. Объясняется медленным впитыванием информации и поведением следующих за трендом участников. Документирован на десятках рынков и классов активов за 100+ лет.",
+          "evolution": "exit_rr",
+          "parent": "tsmom"
+        }
+      }
+    },
+    {
       "name": "order_block+exit_structure",
       "type": "SMC",
       "score": 97,
@@ -2326,7 +2551,14 @@
         "sharpe_trade": 0.029084346404581976,
         "total_R": 387.5209547163931,
         "max_dd_R": 120.92606125041559,
-        "max_loss_streak": 19
+        "max_loss_streak": 19,
+        "profit_concentration": {
+          "top_share": 0.19578994427162263,
+          "median_R": -1.0715696013012441,
+          "max_R": 139.20766018194536,
+          "n": 2368,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -2392,7 +2624,14 @@
         "sharpe_trade": 0.02805312316339959,
         "total_R": 32.17211666079605,
         "max_dd_R": 23.368011947492874,
-        "max_loss_streak": 10
+        "max_loss_streak": 10,
+        "profit_concentration": {
+          "top_share": 0.01977191602266663,
+          "median_R": -0.37882710497519334,
+          "max_R": 2.0879562884292904,
+          "n": 950,
+          "top_n": 5
+        }
       },
       "failed": [
         "6. Стабильность параметров",
@@ -2460,7 +2699,14 @@
         "sharpe_trade": 0.08217716176770308,
         "total_R": 295.51684009402504,
         "max_dd_R": 50.360639213271924,
-        "max_loss_streak": 20
+        "max_loss_streak": 20,
+        "profit_concentration": {
+          "top_share": 0.008834766195806148,
+          "median_R": -1.0404352525732854,
+          "max_R": 3.0969283241729046,
+          "n": 1989,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -2526,7 +2772,14 @@
         "sharpe_trade": 0.029786046382168918,
         "total_R": 509.2181242947596,
         "max_dd_R": 109.75926500335012,
-        "max_loss_streak": 27
+        "max_loss_streak": 27,
+        "profit_concentration": {
+          "top_share": 0.21038745014598229,
+          "median_R": -1.1507126583898641,
+          "max_R": 216.36651585711195,
+          "n": 2275,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -2594,7 +2847,14 @@
         "sharpe_trade": -0.03377933501383327,
         "total_R": -56.7907453846878,
         "max_dd_R": 78.89999530491012,
-        "max_loss_streak": 12
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.021801661902629912,
+          "median_R": -1.026545782002142,
+          "max_R": 3.072589420443648,
+          "n": 1059,
+          "top_n": 5
+        }
       },
       "failed": [
         "6. Стабильность параметров",
@@ -2662,7 +2922,14 @@
         "sharpe_trade": -0.07814754471412716,
         "total_R": -251.23105270458817,
         "max_dd_R": 259.7909481037252,
-        "max_loss_streak": 19
+        "max_loss_streak": 19,
+        "profit_concentration": {
+          "top_share": 0.1207024487504259,
+          "median_R": -0.07073829689827343,
+          "max_R": 26.185800873548043,
+          "n": 4016,
+          "top_n": 5
+        }
       },
       "failed": [
         "6. Стабильность параметров",
@@ -2730,7 +2997,14 @@
         "sharpe_trade": 0.00525007636055017,
         "total_R": 13.959150324574036,
         "max_dd_R": 52.52669799347859,
-        "max_loss_streak": 15
+        "max_loss_streak": 15,
+        "profit_concentration": {
+          "top_share": 0.008043605099868689,
+          "median_R": -1.0330014753512011,
+          "max_R": 2.0846948496894098,
+          "n": 1883,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -2801,7 +3075,14 @@
         "sharpe_trade": -0.07926308771626356,
         "total_R": -26.09319576825539,
         "max_dd_R": 35.683152302396024,
-        "max_loss_streak": 14
+        "max_loss_streak": 14,
+        "profit_concentration": {
+          "top_share": 0.05048887381810313,
+          "median_R": -1.0272036469535362,
+          "max_R": 1.5022499999999983,
+          "n": 277,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -2879,7 +3160,14 @@
         "sharpe_trade": 0.02027794595192482,
         "total_R": 28.19356261719,
         "max_dd_R": 50.46528897445766,
-        "max_loss_streak": 12
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.014490309186318292,
+          "median_R": -1.0710266903739538,
+          "max_R": 2.0067029953327555,
+          "n": 932,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -2956,7 +3244,14 @@
         "sharpe_trade": -0.04802990257489516,
         "total_R": -91.84763935342889,
         "max_dd_R": 159.0596480955034,
-        "max_loss_streak": 16
+        "max_loss_streak": 16,
+        "profit_concentration": {
+          "top_share": 0.22348080068237575,
+          "median_R": -1.0220725619474178,
+          "max_R": 30.329297906976336,
+          "n": 825,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3026,7 +3321,14 @@
         "sharpe_trade": -0.07021079147662555,
         "total_R": -46.224184280447005,
         "max_dd_R": 63.2135345645949,
-        "max_loss_streak": 11
+        "max_loss_streak": 11,
+        "profit_concentration": {
+          "top_share": 0.025188791696632497,
+          "median_R": -1.0315535879169757,
+          "max_R": 1.5244669559212,
+          "n": 549,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3103,7 +3405,14 @@
         "sharpe_trade": -0.023872182019257154,
         "total_R": -8.222264610311486,
         "max_dd_R": 32.0059164059824,
-        "max_loss_streak": 10
+        "max_loss_streak": 10,
+        "profit_concentration": {
+          "top_share": 0.06187545279111276,
+          "median_R": -1.0452740906872156,
+          "max_R": 1.9777130290835707,
+          "n": 254,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3179,7 +3488,14 @@
         "sharpe_trade": -0.01000592810930716,
         "total_R": -31.62913835537476,
         "max_dd_R": 77.52887169954694,
-        "max_loss_streak": 24
+        "max_loss_streak": 24,
+        "profit_concentration": {
+          "top_share": 0.011306824828880646,
+          "median_R": -1.0426648320765421,
+          "max_R": 3.157758937391967,
+          "n": 1851,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3248,7 +3564,14 @@
         "sharpe_trade": -0.0413361775051076,
         "total_R": -162.85976053437432,
         "max_dd_R": 230.10450299703774,
-        "max_loss_streak": 15
+        "max_loss_streak": 15,
+        "profit_concentration": {
+          "top_share": 0.005457290121831565,
+          "median_R": -1.0904331737916528,
+          "max_R": 2.0067029953327555,
+          "n": 2695,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3324,7 +3647,14 @@
         "sharpe_trade": -0.03336465978321658,
         "total_R": -95.24087484382906,
         "max_dd_R": 127.43740211013645,
-        "max_loss_streak": 12
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.007393091789778159,
+          "median_R": -1.0962869338047816,
+          "max_R": 2.0067029953327555,
+          "n": 1929,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3400,7 +3730,14 @@
         "sharpe_trade": -0.062143539544378,
         "total_R": -309.8307152778911,
         "max_dd_R": 334.4984189095818,
-        "max_loss_streak": 15
+        "max_loss_streak": 15,
+        "profit_concentration": {
+          "top_share": 0.0043874555507194156,
+          "median_R": -1.0994864404572464,
+          "max_R": 2.0067029953327555,
+          "n": 3405,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3466,7 +3803,14 @@
         "sharpe_trade": -0.1337048749763555,
         "total_R": -148.60351189179653,
         "max_dd_R": 157.0891257620043,
-        "max_loss_streak": 11
+        "max_loss_streak": 11,
+        "profit_concentration": {
+          "top_share": 0.01587908605051795,
+          "median_R": -1.0370361700867612,
+          "max_R": 1.5243216868399605,
+          "n": 934,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3543,7 +3887,14 @@
         "sharpe_trade": -0.1030343641176464,
         "total_R": -125.77201085593873,
         "max_dd_R": 138.44878358965545,
-        "max_loss_streak": 13
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.019517687545728524,
+          "median_R": -1.038917155247985,
+          "max_R": 2.0354401440623127,
+          "n": 909,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3610,7 +3961,14 @@
         "sharpe_trade": -0.08672746410773302,
         "total_R": -105.88434882597736,
         "max_dd_R": 121.27510738662922,
-        "max_loss_streak": 13
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.019238316648084456,
+          "median_R": -1.0389153416159065,
+          "max_R": 2.044479862153255,
+          "n": 893,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3679,7 +4037,14 @@
         "sharpe_trade": -0.06313948317786176,
         "total_R": -616.5428638774155,
         "max_dd_R": 680.3587926290521,
-        "max_loss_streak": 20
+        "max_loss_streak": 20,
+        "profit_concentration": {
+          "top_share": 0.003597988952840034,
+          "median_R": -1.1562169603253398,
+          "max_R": 3.085842767774511,
+          "n": 5374,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3744,7 +4109,14 @@
         "sharpe_trade": -0.08792722519452832,
         "total_R": -1496.241838902505,
         "max_dd_R": 1499.2584059359547,
-        "max_loss_streak": 12
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.009450129398989,
+          "median_R": -1.0461794776119402,
+          "max_R": 1.5248439721792892,
+          "n": 1775,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3812,7 +4184,14 @@
         "sharpe_trade": -0.10041449755175959,
         "total_R": -20.226563337191745,
         "max_dd_R": 22.268076780268878,
-        "max_loss_streak": 9
+        "max_loss_streak": 9,
+        "profit_concentration": {
+          "top_share": 0.1712138962498714,
+          "median_R": -0.01355899864597318,
+          "max_R": 3.105766857387498,
+          "n": 595,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3888,7 +4267,14 @@
         "sharpe_trade": -0.4370085523905328,
         "total_R": -2139.6663469005175,
         "max_dd_R": 2138.5997568646035,
-        "max_loss_streak": 17
+        "max_loss_streak": 17,
+        "profit_concentration": {
+          "top_share": 0.00580183958166135,
+          "median_R": -1.1088394945400988,
+          "max_R": 1.5166166425502112,
+          "n": 3404,
+          "top_n": 5
+        }
       },
       "failed": [
         "1. Out-of-sample",
@@ -3942,5 +4328,5 @@
       }
     }
   ],
-  "elapsed_min": 11.9
+  "elapsed_min": 12.6
 }
