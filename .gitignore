@@ -1,0 +1,13 @@
+# рыночные данные (качаются локально, в репозиторий не кладём)
+/data/
+*.csv
+
+# артефакты прогонов
+trials*.json
+calibration_report.json
+search_results.json
+*.log
+
+__pycache__/
+*.pyc
+.env
