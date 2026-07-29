@@ -58,6 +58,10 @@ CONFIGS = [
      "stop": {"type": "atr", "params": {"period": 14, "mult": 2.0}},
      "exit": {"type": "trailing_atr", "params": {"period": 14, "mult": 3.0, "max_bars": 200}},
      "filters": []},
+    {"name": "conqueror", "entry": {"type": "conqueror", "params": {}},
+     "stop": {"type": "atr", "params": {"period": 40, "mult": 2.0}},
+     "exit": {"type": "conqueror_trail", "params": {"atr_period": 40, "base_mult": 2.0}},
+     "filters": [], "sizing": {"risk_pct": 0.005}},
     {"name": "consensus2", "entry": {"type": "consensus", "params": {
         "components": [{"type": "donchian_breakout", "params": {}},
                        {"type": "squeeze_breakout", "params": {}}],

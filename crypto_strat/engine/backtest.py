@@ -186,6 +186,19 @@ def run_backtest(df: pd.DataFrame,
     }
     trail_atr = (ind.atr(h, l, c, int(exit_p.get("period", 14)))
                  if cfg.exit["type"] == "trailing_atr" else None)
+
+    # --- Conqueror: трейлинг от экстремального ЗАКРЫТИЯ с кумулятивным сужением ---
+    conq = None
+    if cfg.exit["type"] == "conqueror_trail":
+        from .blocks import conqueror_factors
+        _, conq_changes, _ = conqueror_factors(df, exit_p)
+        conq = {
+            "atr": ind.atr(h, l, c, int(exit_p.get("atr_period", 40))),
+            "changes": conq_changes,
+            "base": float(exit_p.get("base_mult", 2.0)),
+            "narrow": float(exit_p.get("narrow_factor", 2.0 / 3.0)),
+            "min_mult": float(exit_p.get("min_mult", 0.1)),
+        }
     struct_ema = (ind.ema(c, int(exit_p.get("ema_period", 50)))
                   if cfg.exit["type"] == "structure" else None)
 
@@ -241,7 +254,7 @@ def run_backtest(df: pd.DataFrame,
         # 3) управление открытой позицией
         if pos is not None:
             closed = _manage(pos, k, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
-                             exit_p, be_at_r)
+                             exit_p, be_at_r, conq=conq)
             if closed is not None:
                 tr = _close_trade(pos, closed, cost_rate, funding, default_funding,
                                   tf_ms, ts, equity)
@@ -302,11 +315,15 @@ def run_backtest(df: pd.DataFrame,
                         "exit_type": cfg.exit["type"],
                         "mae": 0.0, "mfe": 0.0, "pending_exit": None,
                         "be_done": False, "block": it.meta.get("block", "?"),
+                        # состояние Conqueror: экстремальное ЗАКРЫТИЕ и счётчик
+                        # смен знака факторов с момента входа
+                        "conq_extreme": float(c[k]), "conq_flips": 0,
                     }
                     active = []
                     # позиция может быть закрыта тем же баром — проверяем сразу
                     closed = _manage(pos, k, o, h, l, c, ts, tf_ms, trail_atr,
-                                     struct_ema, exit_p, be_at_r, just_entered=True)
+                                     struct_ema, exit_p, be_at_r, just_entered=True,
+                                     conq=conq)
                     if closed is not None:
                         tr = _close_trade(pos, closed, cost_rate, funding,
                                           default_funding, tf_ms, ts, equity)
@@ -391,7 +408,7 @@ def _try_fill(it: OrderIntent, k: int, o, h, l) -> float | None:
 
 
 def _manage(pos: dict, k: int, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
-            exit_p: dict, be_at_r, just_entered: bool = False):
+            exit_p: dict, be_at_r, just_entered: bool = False, conq: dict | None = None):
     """Ведение позиции на баре k. Возвращает (exit_bar, exit_price, reason) или None.
 
     Порядок ВНУТРИ бара зафиксирован и пессимистичен:
@@ -432,6 +449,25 @@ def _manage(pos: dict, k: int, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
             return (k, float(pos["tp"]), "take_profit")
 
     bars_held = k - pos["entry_bar"]
+
+    # --- Conqueror: трейлинг от экстремального ЗАКРЫТИЯ + кумулятивное сужение ---
+    # Коэффициент ATR уменьшается на треть при КАЖДОЙ смене знака любого из трёх
+    # факторов — это не бинарный weak/strong, а пошаговое сужение, и оно
+    # накапливается за время сделки: 2.00 -> 1.33 -> 0.89 -> 0.59 -> ...
+    # Стоп двигается ТОЛЬКО в сторону прибыли, поэтому сужение может лишь
+    # подтянуть его, но не отпустить обратно.
+    if pos["exit_type"] == "conqueror_trail" and conq is not None:
+        a = conq["atr"][k]
+        if not np.isnan(a):
+            if not just_entered:
+                pos["conq_flips"] += int(conq["changes"][k])
+            pos["conq_extreme"] = (max(pos["conq_extreme"], float(c[k])) if d > 0
+                                   else min(pos["conq_extreme"], float(c[k])))
+            mult = max(conq["base"] * (conq["narrow"] ** pos["conq_flips"]),
+                       conq["min_mult"])
+            cand = pos["conq_extreme"] - d * mult * a
+            pos["stop"] = max(pos["stop"], cand) if d > 0 else min(pos["stop"], cand)
+            pos["conq_mult"] = mult
 
     # трейлинг: новый стоп рассчитывается по ЗАКРЫТИЮ бара k и действует с k+1
     if pos["exit_type"] == "trailing_atr" and trail_atr is not None:
@@ -488,5 +524,7 @@ def _close_trade(pos: dict, closed, cost_rate: float, funding, default_funding: 
         "mae_R": pos["mae"], "mfe_R": pos["mfe"],
         "capped": bool(pos["capped"]),
         "block": pos["block"],
+        "conq_flips": int(pos.get("conq_flips", 0)),
+        "conq_mult": float(pos.get("conq_mult", np.nan)),
         "stop_dist_pct": pos["stop_dist"] / pos["entry_price"],
     }

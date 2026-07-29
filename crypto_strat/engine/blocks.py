@@ -526,6 +526,75 @@ def filter_ref_trend(df: pd.DataFrame, p: dict):
     return up, dn
 
 
+def conqueror_factors(df: pd.DataFrame, p: dict):
+    """Три фактора Conqueror (Courtney Smith, гл. 4) и их знаки.
+
+    Cond1 = close − SMA10(close)          — цена относительно средней
+    Cond2 = SMA10(t) − SMA10(t−10)        — наклон самой средней
+    Cond3 = close − close[−40]            — долгосрочный моментум
+
+    Все три > 0 -> лонг, все три < 0 -> шорт, иначе вне рынка.
+
+    Функция вынесена отдельно, потому что нужна ДВАЖДЫ: входному блоку — чтобы
+    поймать момент согласия, и выходу — чтобы считать смены знака. Считать их
+    в двух местах по-разному было бы источником расхождений.
+    """
+    _, _, _, c = _arrays(df)
+    sma_p = int(p.get("sma_period", 10))
+    slope_lb = int(p.get("slope_lookback", 10))
+    mom_lb = int(p.get("mom_lookback", 40))
+
+    sma = ind.sma(c, sma_p)
+    f1 = c - sma
+    f2 = np.full(len(c), np.nan)
+    f2[slope_lb:] = sma[slope_lb:] - sma[:-slope_lb]
+    f3 = np.full(len(c), np.nan)
+    f3[mom_lb:] = c[mom_lb:] - c[:-mom_lb]
+
+    signs = np.zeros((3, len(c)), dtype=np.int8)
+    for i, f in enumerate((f1, f2, f3)):
+        s = np.sign(np.nan_to_num(f, nan=0.0)).astype(np.int8)
+        s[np.isnan(f)] = 0
+        signs[i] = s
+
+    valid = ~(np.isnan(f1) | np.isnan(f2) | np.isnan(f3))
+    state = np.zeros(len(c), dtype=np.int8)
+    state[valid & (signs[0] > 0) & (signs[1] > 0) & (signs[2] > 0)] = 1
+    state[valid & (signs[0] < 0) & (signs[1] < 0) & (signs[2] < 0)] = -1
+
+    # смена знака ЛЮБОГО из трёх факторов на баре k (оба знака ненулевые)
+    changes = np.zeros(len(c), dtype=np.int8)
+    for i in range(3):
+        s = signs[i]
+        flip = np.zeros(len(c), dtype=bool)
+        flip[1:] = (s[1:] != s[:-1]) & (s[1:] != 0) & (s[:-1] != 0)
+        changes += flip.astype(np.int8)
+    return state, changes, signs
+
+
+def entry_conqueror(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """Вход Conqueror: сигнал на баре, где выполнилось ПОСЛЕДНЕЕ из трёх условий.
+
+    То есть в момент ПЕРЕХОДА состояния в «все три согласны». Пока согласие
+    держится, новых входов нет — иначе одно событие плодило бы серию заявок.
+
+    Оговорка об исполнении. Первоисточник говорит «вход по закрытию бара».
+    Движок исполняет рыночную заявку по ОТКРЫТИЮ следующего бара — это
+    сознательно консервативнее. В крипте торговля непрерывная и 24/7, поэтому
+    открытие следующего бара практически совпадает с закрытием текущего, а
+    правило «не входить на баре, который только что увидел» — наш главный
+    рубеж против lookahead, и ослаблять его ради буквы источника нельзя.
+    """
+    state, _, _ = conqueror_factors(df, p)
+    intents = []
+    for i in range(1, len(df)):
+        if state[i] != 0 and state[i] != state[i - 1]:
+            intents.append(OrderIntent(int(state[i]), i, "market", None,
+                                       {"type": "none"}, 1,
+                                       meta={"block": "conqueror"}))
+    return intents
+
+
 def entry_consensus(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
     """СОГЛАСИЕ нескольких механизмов разной природы.
 
@@ -597,6 +666,7 @@ ENTRY_BLOCKS = {
     "order_block": entry_order_block,
     "rsi_threshold": entry_rsi_threshold,
     "consensus": entry_consensus,
+    "conqueror": entry_conqueror,
     "squeeze_breakout": entry_squeeze_breakout,
     "ttm_squeeze": entry_ttm_squeeze,
     "nr_expansion": entry_nr_expansion,

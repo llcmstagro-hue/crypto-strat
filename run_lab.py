@@ -35,7 +35,7 @@ from crypto_strat.data.loader import load_basket
 from crypto_strat.knowledge.db import KnowledgeBase, Record
 from crypto_strat.search.evolution import evolve
 from crypto_strat.search.ensembles import (ensemble_pool, ensemble_seeds,
-                                          MAX_HYPOTHESES)
+                                          conqueror_pool, MAX_HYPOTHESES)
 from crypto_strat.search.pool import base_pool, evolution_seeds, new_classes_pool
 from crypto_strat.search.score import Idea, classify, gate
 from crypto_strat.validation.barriers import Thresholds, run_symbols, thresholds_for_tf
@@ -49,7 +49,7 @@ EVO_SEEDS_NEW = ("vol_squeeze_breakout", "vol_ttm_squeeze", "vol_nr_expansion",
                  "xmkt_btc_spillover", "xmkt_btc_seesaw", "xmkt_donchian_btc_filter")
 
 
-def build_pool(with_evolution: bool = True, classes: str = "all"):
+def build_pool(with_evolution: bool = True, classes: str = "all", tf: str = "4h"):
     """classes: all | new | base.
 
     `new` — только волатильностный и межрыночный классы. Пробой и возврат к
@@ -59,6 +59,10 @@ def build_pool(with_evolution: bool = True, classes: str = "all"):
     """
     OLD_SEEDS = ("donchian_breakout", "keltner_breakout", "tsmom",
                  "bb_meanrev", "order_block", "level_retest")
+    if classes == "conqueror":
+        # внешняя стратегия проверяется КАК ЕСТЬ: без Evolution, без мутаций.
+        # Задача — вердикт по чужому методу, а не поиск удачной его версии.
+        return conqueror_pool(tf)
     if classes == "ensemble":
         pool, seed_names = ensemble_pool(), ensemble_seeds()
     elif classes == "new":
@@ -97,7 +101,7 @@ def main() -> int:
     ap.add_argument("--trials", default="./trials_lab.json")
     ap.add_argument("--no-evolution", action="store_true")
     ap.add_argument("--classes", default="all",
-                    choices=["all", "new", "base", "ensemble"],
+                    choices=["all", "new", "base", "ensemble", "conqueror"],
                     help="какие классы механизмов гонять")
     ap.add_argument("--fail-fast", action="store_true",
                     help="останавливать гипотезу на первом проваленном барьере")
@@ -117,7 +121,7 @@ def main() -> int:
     kb = KnowledgeBase(args.db)
     tl = TrialLog(args.trials)
     th = thresholds_for_tf(args.tf)
-    pool = build_pool(not args.no_evolution, args.classes)
+    pool = build_pool(not args.no_evolution, args.classes, args.tf)
 
     print("=" * 96)
     print("TRADING RESEARCH LAB — ШИРОКИЙ ПОИСК")

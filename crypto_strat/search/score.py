@@ -41,6 +41,8 @@ BLOCK_TYPE = {
     "nr_expansion": "volatility",
     "ref_momentum": "cross-market",
     "ref_seesaw": "cross-market",
+    # внешняя стратегия: согласие трёх измерителей тренда
+    "conqueror": "trend",
 }
 
 
