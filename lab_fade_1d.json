@@ -1,0 +1,447 @@
+{
+  "tf": "1d",
+  "primary": "BTCUSDT",
+  "data_span": "2017-08-18..2026-07-28",
+  "spans": {
+    "BTCUSDT": [
+      "2017-08-18",
+      "2026-07-28",
+      3257
+    ],
+    "ETHUSDT": [
+      "2017-08-18",
+      "2026-07-28",
+      3258
+    ],
+    "SOLUSDT": [
+      "2020-08-12",
+      "2026-07-28",
+      2177
+    ],
+    "BNBUSDT": [
+      "2017-11-06",
+      "2026-07-28",
+      3179
+    ],
+    "DOGEUSDT": [
+      "2019-07-06",
+      "2026-07-28",
+      2578
+    ]
+  },
+  "has_volume": false,
+  "pool_size": 4,
+  "trials_total": 97864,
+  "trials_selection": 4931,
+  "kb_stats": {
+    "всего гипотез": 263,
+    "дошли до бэктеста": 244,
+    "отсеяны до бэктеста": 19,
+    "выжили": 0
+  },
+  "by_type": [
+    {
+      "тип": "breakout",
+      "всего": 47,
+      "тестировано": 40,
+      "выжило": 0,
+      "ср_барьеров": 4.42,
+      "ср_робастность": 0.74
+    },
+    {
+      "тип": "ensemble",
+      "всего": 23,
+      "тестировано": 11,
+      "выжило": 0,
+      "ср_барьеров": 4.36,
+      "ср_робастность": 0.637
+    },
+    {
+      "тип": "trend",
+      "всего": 10,
+      "тестировано": 10,
+      "выжило": 0,
+      "ср_барьеров": 4.2,
+      "ср_робастность": 0.623
+    },
+    {
+      "тип": "volatility",
+      "всего": 48,
+      "тестировано": 48,
+      "выжило": 0,
+      "ср_барьеров": 3.73,
+      "ср_робастность": 0.569
+    },
+    {
+      "тип": "cross-market",
+      "всего": 50,
+      "тестировано": 50,
+      "выжило": 0,
+      "ср_барьеров": 3.7,
+      "ср_робастность": 0.645
+    },
+    {
+      "тип": "SMC",
+      "всего": 34,
+      "тестировано": 34,
+      "выжило": 0,
+      "ср_барьеров": 3.03,
+      "ср_робастность": 0.486
+    },
+    {
+      "тип": "momentum",
+      "всего": 18,
+      "тестировано": 18,
+      "выжило": 0,
+      "ср_барьеров": 2.44,
+      "ср_робастность": 0.476
+    },
+    {
+      "тип": "pattern",
+      "всего": 5,
+      "тестировано": 5,
+      "выжило": 0,
+      "ср_барьеров": 1.8,
+      "ср_робастность": 0.269
+    },
+    {
+      "тип": "mean-reversion",
+      "всего": 28,
+      "тестировано": 28,
+      "выжило": 0,
+      "ср_барьеров": 1.25,
+      "ср_робастность": 0.217
+    }
+  ],
+  "failure_reasons": [
+    [
+      "5. Поправка на multiple testing",
+      243
+    ],
+    [
+      "1. Out-of-sample",
+      213
+    ],
+    [
+      "2. Walk-forward",
+      197
+    ],
+    [
+      "6. Стабильность параметров",
+      73
+    ],
+    [
+      "3. Кросс-инструмент",
+      73
+    ],
+    [
+      "7. Реалистичные издержки",
+      57
+    ],
+    [
+      "4. Минимум сделок",
+      30
+    ]
+  ],
+  "results": [
+    {
+      "name": "fade_fbf_rr_htf_1d",
+      "type": "mean-reversion",
+      "score": 100,
+      "barriers": 1,
+      "robustness": 0.1201,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1712,
+        "winrate": 0.3317757009345794,
+        "profit_factor": 0.9085912898554105,
+        "expectancy_R": -0.06720580270502477,
+        "sharpe_trade": -0.04377527871247394,
+        "total_R": -115.05633423100242,
+        "max_dd_R": 129.0050411280467,
+        "max_loss_streak": 16,
+        "profit_concentration": {
+          "top_share": 0.010951211242703476,
+          "median_R": -1.0511842525505335,
+          "max_R": 2.5093062256370686,
+          "n": 1712,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "fade_fbf_rr_htf_1d|rr=2.5,ema_period=30",
+        "entry": {
+          "type": "false_breakout_fade",
+          "params": {
+            "stop_buffer": 0.0005
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "fixed_rr",
+          "params": {
+            "rr": 2.5,
+            "max_bars": 10
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [
+          {
+            "type": "htf_trend",
+            "params": {
+              "factor": 7,
+              "ema_period": 30
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Wen/Bouri/Xu/Zhao, Intraday return predictability in the cryptocurrency markets: momentum, reversal, or both (SSRN 4080253); Arda, Bollinger Bands under Varying Market Regimes: breakout vs mean-reversion in BTC/USDT (SSRN 5775962); quantvps.com — Swing Failure Pattern: правила фиксации несостоявшегося пробоя (стоп за хвостом, R/R от 2:1); chartinglens.com / tradeslayers.com — liquidity sweep и fakeout: формализация «снял ликвидность и не удержался»",
+          "caveat": "ОСЛАБЛЕННАЯ ВЕРСИЯ: источники называют фильтр объёма ключевым для fade (низкий объём за уровнем = пробой ложный), но в наших H4/D1 объёма нет. Проверяется только ценовое правило. Отрицательный результат закрывает «fade без объёма», а не идею fade целиком."
+        }
+      }
+    },
+    {
+      "name": "fade_fbf_rr_1d",
+      "type": "mean-reversion",
+      "score": 100,
+      "barriers": 1,
+      "robustness": 0.06,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 2454,
+        "winrate": 0.3264058679706601,
+        "profit_factor": 0.8649019403450081,
+        "expectancy_R": -0.09883906204276838,
+        "sharpe_trade": -0.0659289286616861,
+        "total_R": -242.55105825295405,
+        "max_dd_R": 251.63324922850424,
+        "max_loss_streak": 14,
+        "profit_concentration": {
+          "top_share": 0.008083714860787988,
+          "median_R": -1.0466526671484497,
+          "max_R": 2.5145804264656206,
+          "n": 2454,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "fade_fbf_rr_1d|stop_buffer=0.0005,rr=2.5",
+        "entry": {
+          "type": "false_breakout_fade",
+          "params": {
+            "stop_buffer": 0.0005
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "fixed_rr",
+          "params": {
+            "rr": 2.5,
+            "max_bars": 10
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Wen/Bouri/Xu/Zhao, Intraday return predictability in the cryptocurrency markets: momentum, reversal, or both (SSRN 4080253); Arda, Bollinger Bands under Varying Market Regimes: breakout vs mean-reversion in BTC/USDT (SSRN 5775962); quantvps.com — Swing Failure Pattern: правила фиксации несостоявшегося пробоя (стоп за хвостом, R/R от 2:1); chartinglens.com / tradeslayers.com — liquidity sweep и fakeout: формализация «снял ликвидность и не удержался»",
+          "caveat": "ОСЛАБЛЕННАЯ ВЕРСИЯ: источники называют фильтр объёма ключевым для fade (низкий объём за уровнем = пробой ложный), но в наших H4/D1 объёма нет. Проверяется только ценовое правило. Отрицательный результат закрывает «fade без объёма», а не идею fade целиком."
+        }
+      }
+    },
+    {
+      "name": "fade_fbf_opposite_htf_1d",
+      "type": "mean-reversion",
+      "score": 100,
+      "barriers": 1,
+      "robustness": 0.0016,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1800,
+        "winrate": 0.4627777777777778,
+        "profit_factor": 0.7863614663070279,
+        "expectancy_R": -0.12647721914430238,
+        "sharpe_trade": -0.10470005427310748,
+        "total_R": -227.65899445974443,
+        "max_dd_R": 240.00332043893258,
+        "max_loss_streak": 11,
+        "profit_concentration": {
+          "top_share": 0.03471561950500554,
+          "median_R": -1.028903503713608,
+          "max_R": 9.325408642294882,
+          "n": 1800,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "fade_fbf_opposite_htf_1d|stop_buffer=0.005,ema_period=30",
+        "entry": {
+          "type": "false_breakout_fade",
+          "params": {
+            "stop_buffer": 0.005
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "level_target",
+          "params": {
+            "max_bars": 10
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [
+          {
+            "type": "htf_trend",
+            "params": {
+              "factor": 7,
+              "ema_period": 30
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Wen/Bouri/Xu/Zhao, Intraday return predictability in the cryptocurrency markets: momentum, reversal, or both (SSRN 4080253); Arda, Bollinger Bands under Varying Market Regimes: breakout vs mean-reversion in BTC/USDT (SSRN 5775962); quantvps.com — Swing Failure Pattern: правила фиксации несостоявшегося пробоя (стоп за хвостом, R/R от 2:1); chartinglens.com / tradeslayers.com — liquidity sweep и fakeout: формализация «снял ликвидность и не удержался»",
+          "caveat": "ОСЛАБЛЕННАЯ ВЕРСИЯ: источники называют фильтр объёма ключевым для fade (низкий объём за уровнем = пробой ложный), но в наших H4/D1 объёма нет. Проверяется только ценовое правило. Отрицательный результат закрывает «fade без объёма», а не идею fade целиком."
+        }
+      }
+    },
+    {
+      "name": "fade_fbf_opposite_1d",
+      "type": "mean-reversion",
+      "score": 100,
+      "barriers": 1,
+      "robustness": 0.0008,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 3206,
+        "winrate": 0.4201497192763568,
+        "profit_factor": 0.7602068641635371,
+        "expectancy_R": -0.15782708529383863,
+        "sharpe_trade": -0.1155058559609629,
+        "total_R": -505.9936354520467,
+        "max_dd_R": 512.5782928057581,
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.028427370981334407,
+          "median_R": -1.0444185272517732,
+          "max_R": 16.922796839260148,
+          "n": 3206,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "fade_fbf_opposite_1d|stop_buffer=0.0005,max_bars=10",
+        "entry": {
+          "type": "false_breakout_fade",
+          "params": {
+            "stop_buffer": 0.0005
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "level_target",
+          "params": {
+            "max_bars": 10
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "fee_bps_per_side": 6.0,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Wen/Bouri/Xu/Zhao, Intraday return predictability in the cryptocurrency markets: momentum, reversal, or both (SSRN 4080253); Arda, Bollinger Bands under Varying Market Regimes: breakout vs mean-reversion in BTC/USDT (SSRN 5775962); quantvps.com — Swing Failure Pattern: правила фиксации несостоявшегося пробоя (стоп за хвостом, R/R от 2:1); chartinglens.com / tradeslayers.com — liquidity sweep и fakeout: формализация «снял ликвидность и не удержался»",
+          "caveat": "ОСЛАБЛЕННАЯ ВЕРСИЯ: источники называют фильтр объёма ключевым для fade (низкий объём за уровнем = пробой ложный), но в наших H4/D1 объёма нет. Проверяется только ценовое правило. Отрицательный результат закрывает «fade без объёма», а не идею fade целиком."
+        }
+      }
+    }
+  ],
+  "elapsed_min": 0.1
+}

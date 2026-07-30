@@ -32,6 +32,10 @@ BLOCK_TYPE = {
     "bollinger_meanrev": "mean-reversion",
     "rsi_threshold": "mean-reversion",
     "rsi_divergence": "mean-reversion",
+    # fade ложного пробоя: формально MR, но ставка на СОБЫТИЕ (снятая
+    # ликвидность), а не на расстояние до средней. Класс оставлен самым
+    # скептичным сознательно — чтобы сравнение с мёртвым MR было честным
+    "false_breakout_fade": "mean-reversion",
     "order_block": "SMC",
     "fvg": "SMC",
     "level_retest": "SMC",

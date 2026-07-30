@@ -1015,8 +1015,71 @@ def entry_slingshot(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
     return sorted(intents, key=lambda x: x.signal_bar)
 
 
+def entry_false_breakout_fade(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
+    """Fade ложного пробоя уровня предыдущего дня (stop-hunt fade).
+
+    ПОЧЕМУ ЭТО НЕ ОЧЕРЕДНОЙ MEAN-REVERSION. Классический возврат к среднему
+    (полосы Боллинджера, RSI-2) у нас мёртв: 1.29 барьера из 7 в среднем по
+    24 гипотезам. Но он ставит на «цена ушла далеко от средней — вернётся»,
+    то есть на статистику отклонения. Здесь ставка на СОБЫТИЕ: цена сходила
+    за конкретный уровень, где заведомо стоят стопы, собрала их и НЕ смогла
+    там закрыться. Утверждение не про расстояние, а про то, что за движением
+    не оказалось продолжающего потока.
+
+    ГИПОТЕЗА ПРОГОНА, ради которой всё и затевается: если пробои на зрелом
+    рынке стали чаще проваливаться (а именно это убило трендследование —
+    пять заходов, затухание у всех), то ставка ПРОТИВ пробоя должна была не
+    затухнуть, а наоборот окрепнуть. Это первая проверяемая гипотеза, у
+    которой ожидаемое направление эффекта ОБРАТНО всему проверенному раньше.
+
+    Правило:
+      * уровень — хай/лоу последнего закрытого календарного дня;
+      * ложный пробой вверх: high бара > вчерашнего хая, а close < него ->
+        шорт; зеркально вниз -> лонг;
+      * стоп за экстремумом самого ложного пробоя (за выбитый хвост).
+
+    Оговорка об исполнении: источники входят «по закрытию». Движок исполняет
+    рыночную заявку по открытию следующего бара — общее правило против
+    lookahead, ослаблять его нельзя.
+
+    Бар, проколовший ОБА уровня и закрывшийся внутри, СОЗНАТЕЛЬНО
+    пропускается. Формально он даёт и лонг, и шорт одновременно; взять
+    «первый попавшийся» значило бы подбрасывать монету и записывать результат
+    в статистику стратегии. Рынок отверг обе стороны — направленной
+    информации в таком баре нет.
+    """
+    _o, h, l, c = _arrays(df)
+    ts = df["ts"].to_numpy("int64")
+    pdh, pdl = ind.prev_day_levels(ts, h, l)
+    buf = float(p.get("stop_buffer", 0.0005))
+    min_pen = float(p.get("min_pen_pct", 0.0))     # мин. глубина прокола
+
+    intents = []
+    for i in range(len(df)):
+        if np.isnan(pdh[i]) or np.isnan(pdl[i]):
+            continue
+        up = (h[i] > pdh[i] * (1 + min_pen)) and (c[i] < pdh[i])
+        dn = (l[i] < pdl[i] * (1 - min_pen)) and (c[i] > pdl[i])
+        if up and dn:
+            continue
+        if up:
+            intents.append(OrderIntent(
+                -1, i, "market", None,
+                {"type": "level", "price": float(h[i]) * (1 + buf)}, 1,
+                meta={"block": "false_breakout_fade", "level": float(pdh[i]),
+                      "target": float(pdl[i]), "sweep": float(h[i])}))
+        elif dn:
+            intents.append(OrderIntent(
+                +1, i, "market", None,
+                {"type": "level", "price": float(l[i]) * (1 - buf)}, 1,
+                meta={"block": "false_breakout_fade", "level": float(pdl[i]),
+                      "target": float(pdh[i]), "sweep": float(l[i])}))
+    return intents
+
+
 ENTRY_BLOCKS = {
     "order_block": entry_order_block,
+    "false_breakout_fade": entry_false_breakout_fade,
     "channel_stop": entry_channel_stop,
     "trend_swings": entry_trend_swings,
     "stoch_cross50": entry_stoch_cross50,

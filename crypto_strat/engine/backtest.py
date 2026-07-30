@@ -324,7 +324,7 @@ def run_backtest(df: pd.DataFrame,
                 # «цель прибыли» окажется ПОЗАДИ входа — такая сделка
                 # закрылась бы «по тейку» с убытком. Это не сделка метода.
                 tgt = None
-                if cfg.exit["type"] == "slingshot":
+                if cfg.exit["type"] in ("slingshot", "level_target"):
                     tgt = it.meta.get("target")
                     if tgt is not None and (
                             (it.direction > 0 and tgt <= entry_price) or

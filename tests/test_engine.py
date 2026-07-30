@@ -82,6 +82,19 @@ CONFIGS = [
      "stop": {"type": "atr", "params": {"period": 14, "mult": 2.0}},
      "exit": {"type": "trailing_atr", "params": {"period": 14, "mult": 3.0, "max_bars": 200}},
      "filters": [{"type": "ref_trend", "params": {"ref": "REF", "ema_period": 50}}]},
+    # --- fade ложного пробоя уровня предыдущего дня ---
+    # Слабое место здесь — уровень «вчерашнего» дня: если он посчитан с
+    # включением ТЕКУЩЕГО дня, обрезка ряда это немедленно покажет.
+    {"name": "fade_rr", "entry": {"type": "false_breakout_fade",
+                                  "params": {"stop_buffer": 0.0005}},
+     "stop": {"type": "block", "params": {}},
+     "exit": {"type": "fixed_rr", "params": {"rr": 2.0, "max_bars": 30}},
+     "filters": []},
+    {"name": "fade_opp", "entry": {"type": "false_breakout_fade",
+                                   "params": {"stop_buffer": 0.002}},
+     "stop": {"type": "block", "params": {}},
+     "exit": {"type": "level_target", "params": {"max_bars": 30}},
+     "filters": [{"type": "htf_trend", "params": {"factor": 6, "ema_period": 50}}]},
     # --- внешний источник: методы Куртни Смита ---
     # Каждый новый блок обязан пройти ту же обрезку ряда. Слабое место здесь
     # именно у Смита: его входы исполняются ВНУТРИ бара стоп-приказом, а часть

@@ -38,6 +38,7 @@ from crypto_strat.search.ensembles import (ensemble_pool, ensemble_seeds,
                                           conqueror_pool, MAX_HYPOTHESES)
 from crypto_strat.search.pool import base_pool, evolution_seeds, new_classes_pool
 from crypto_strat.search.smith import smith_pool
+from crypto_strat.search.fade import fade_pool
 from crypto_strat.search.score import Idea, classify, gate
 from crypto_strat.validation.barriers import Thresholds, run_symbols, thresholds_for_tf
 from crypto_strat.validation.filter import run_filter
@@ -64,6 +65,10 @@ def build_pool(with_evolution: bool = True, classes: str = "all", tf: str = "4h"
         # внешняя стратегия проверяется КАК ЕСТЬ: без Evolution, без мутаций.
         # Задача — вердикт по чужому методу, а не поиск удачной его версии.
         return conqueror_pool(tf)
+    if classes == "fade":
+        # веб-гипотеза проверяется как есть: без Evolution. Вопрос прогона —
+        # «ведёт ли себя fade иначе», а не «найдётся ли удачная его версия».
+        return fade_pool(tf)
     if classes == "smith":
         # то же правило, что и для Conqueror: чужие методы гоняются как есть.
         # Мутировать их — значит проверять уже не Смита, а нас.
@@ -107,7 +112,7 @@ def main() -> int:
     ap.add_argument("--no-evolution", action="store_true")
     ap.add_argument("--classes", default="all",
                     choices=["all", "new", "base", "ensemble", "conqueror",
-                             "smith"],
+                             "smith", "fade"],
                     help="какие классы механизмов гонять")
     ap.add_argument("--fail-fast", action="store_true",
                     help="останавливать гипотезу на первом проваленном барьере")
