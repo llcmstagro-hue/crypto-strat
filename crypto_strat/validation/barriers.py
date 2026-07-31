@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 
 from ..engine.backtest import run_backtest, BacktestResult
-from ..engine.config import StrategyConfig, MIN_ROUND_TRIP_BPS
+from ..engine.config import StrategyConfig, MIN_ROUND_TRIP_BPS, MIN_MAKER_FEE_BPS, MIN_TAKER_FEE_BPS, MIN_SLIP_BPS
 from ..engine import indicators as ind
 from ..engine.metrics import trade_metrics, full_metrics
 from .hypothesis import Hypothesis, TrialLog
@@ -469,8 +469,29 @@ def barrier_costs(dataset: dict, cfg: StrategyConfig, results: list[BacktestResu
     (c) стресс: удвоенные издержки. Эдж, исчезающий при удвоении комиссии,
         это не эдж, а зазор в модели исполнения.
     """
-    rt = cfg.round_trip_bps()
-    cost_ok = rt >= MIN_ROUND_TRIP_BPS
+    # round-trip считается ПО ФАКТУ исполнений, а не по названию модели:
+    # доля мейкерных входов известна только после прогона, и у одной и той же
+    # стратегии она может быть не 0 и не 1.
+    fee_sum = sum(float(r.trades["fees"].sum()) for r in results if r.n_trades)
+    notional_sum = sum(float(r.trades["notional"].sum())
+                       for r in results if r.n_trades)
+    rt = (10_000.0 * fee_sum / notional_sum) if notional_sum > 0 else cfg.round_trip_bps()
+    maker_share = 0.0
+    n_tr = sum(r.n_trades for r in results)
+    if n_tr:
+        maker_share = sum(float((r.trades["entry_kind"] == "limit").sum())
+                          for r in results if r.n_trades) / n_tr
+
+    if cfg.is_flat():
+        cost_ok = rt >= MIN_ROUND_TRIP_BPS
+    else:
+        # В модели maker/taker единого порога быть не может: у лимитного входа
+        # честный round-trip физически ниже, чем у рыночного. Полы стоят на
+        # КОМПОНЕНТАХ и проверены конструктором конфига, здесь остаётся
+        # убедиться, что они не подменены на ходу.
+        cost_ok = (float(cfg.costs["maker_fee_bps"]) >= MIN_MAKER_FEE_BPS - 1e-9
+                   and float(cfg.costs["taker_fee_bps"]) >= MIN_TAKER_FEE_BPS - 1e-9
+                   and float(cfg.costs["slip_bps"]) >= MIN_SLIP_BPS - 1e-9)
 
     # (b) стоп против ATR
     ratios = []
@@ -492,8 +513,15 @@ def barrier_costs(dataset: dict, cfg: StrategyConfig, results: list[BacktestResu
 
     # (c) стресс по издержкам
     stressed = cfg.to_dict()
-    stressed["costs"]["fee_bps_per_side"] *= th.cost_stress_mult
-    stressed["costs"]["slip_bps_per_side"] *= th.cost_stress_mult
+    if cfg.is_flat():
+        stressed["costs"]["fee_bps_per_side"] *= th.cost_stress_mult
+        stressed["costs"]["slip_bps_per_side"] *= th.cost_stress_mult
+    else:
+        # Удваиваем и комиссию, и проскальзывание. Комиссия задана биржей и
+        # вырасти вдвое не может — но стресс здесь не про прогноз тарифа, а
+        # про то, остаётся ли эдж, если модель исполнения ошибается вдвое.
+        for k_ in ("maker_fee_bps", "taker_fee_bps", "slip_bps"):
+            stressed["costs"][k_] *= th.cost_stress_mult
     stressed["name"] = cfg.name + "|cost_x2"
     s_res = run_symbols(dataset, StrategyConfig.from_dict(stressed), list(dataset))
     s_m = trade_metrics(pooled_R(s_res))
@@ -507,17 +535,22 @@ def barrier_costs(dataset: dict, cfg: StrategyConfig, results: list[BacktestResu
     if gross:
         cost_share = fees / abs(gross)
 
+    cost_label = (f"round-trip >= {MIN_ROUND_TRIP_BPS} bps" if cfg.is_flat()
+                  else "ставки не ниже реальных (maker 2 / taker 5.5 / слип 9 bps)")
     checks = {
-        f"round-trip >= {MIN_ROUND_TRIP_BPS} bps": cost_ok,
+        cost_label: cost_ok,
         "стоп не мельче 0.5 ATR": stop_ok,
         "переживает удвоение издержек": stress_ok,
     }
     passed = all(checks.values())
-    note = (f"round-trip {rt:.0f} bps, издержки съедают {cost_share*100:.0f}% валовой; "
+    note = (f"round-trip {rt:.1f} bps по факту "
+            f"(мейкерных входов {maker_share*100:.0f}%), "
+            f"издержки съедают {cost_share*100:.0f}% валовой; "
             f"медиана стопа = {stop_ratio:.2f} ATR; при x{th.cost_stress_mult:.0f} "
             f"издержках exp={s_m['expectancy_R']:+.3f}R (было {base_m['expectancy_R']:+.3f}R)")
     return BarrierResult("7. Реалистичные издержки", passed,
-                         {"round_trip_bps": rt, "stop_to_atr": stop_ratio,
+                         {"round_trip_bps": rt, "maker_share": maker_share,
+                          "stop_to_atr": stop_ratio,
                           "cost_share": cost_share, "stressed": s_m,
                           "checks": checks}, note)
 

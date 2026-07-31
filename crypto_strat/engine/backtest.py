@@ -229,7 +229,8 @@ def run_backtest(df: pd.DataFrame,
                     "sw_n_hi": nh, "sw_n_lo": nl,
                     "sw_buf": float(exit_p.get("stop_buffer", 0.0005))})
 
-    cost_rate = cfg.cost_rate_per_side()
+    exit_cost_rate = cfg.exit_cost_rate()
+    maker_through = cfg.maker_through()
     default_funding = float(cfg.costs["funding_default_8h"])
     risk_pct = float(cfg.sizing["risk_pct"])
     max_lev = float(cfg.sizing["max_leverage"])
@@ -284,8 +285,8 @@ def run_backtest(df: pd.DataFrame,
             closed = _manage(pos, k, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
                              exit_p, be_at_r, conq=conq, aux=aux)
             if closed is not None:
-                tr = _close_trade(pos, closed, cost_rate, funding, default_funding,
-                                  tf_ms, ts, equity)
+                tr = _close_trade(pos, closed, exit_cost_rate, funding,
+                                  default_funding, tf_ms, ts, equity)
                 equity = tr["equity_after"]
                 trades.append(tr)
                 pos = None
@@ -299,7 +300,7 @@ def run_backtest(df: pd.DataFrame,
             equity_curve[k] = equity
             fill = None
             for it in list(active):
-                f = _try_fill(it, k, o, h, l)
+                f = _try_fill(it, k, o, h, l, maker_through)
                 if f is not None:
                     fill = (it, f)
                     break
@@ -370,6 +371,11 @@ def run_backtest(df: pd.DataFrame,
                         "exit_type": cfg.exit["type"],
                         "mae": 0.0, "mfe": 0.0, "pending_exit": None,
                         "be_done": False, "block": it.meta.get("block", "?"),
+                        # тип исполнения ВХОДА определяет его издержку:
+                        # покоящийся лимит — мейкер без проскальзывания,
+                        # рынок и стоп — тейкер со проскальзыванием
+                        "entry_kind": it.kind,
+                        "entry_cost_rate": cfg.entry_cost_rate(it.kind),
                         # состояние Conqueror: экстремальное ЗАКРЫТИЕ и счётчик
                         # смен знака факторов с момента входа
                         "conq_extreme": float(c[k]), "conq_flips": 0,
@@ -380,7 +386,7 @@ def run_backtest(df: pd.DataFrame,
                                      struct_ema, exit_p, be_at_r, just_entered=True,
                                      conq=conq, aux=aux)
                     if closed is not None:
-                        tr = _close_trade(pos, closed, cost_rate, funding,
+                        tr = _close_trade(pos, closed, exit_cost_rate, funding,
                                           default_funding, tf_ms, ts, equity)
                         equity = tr["equity_after"]
                         trades.append(tr)
@@ -391,7 +397,7 @@ def run_backtest(df: pd.DataFrame,
     # позиция, оставшаяся открытой на конце данных, ЗАКРЫВАЕТСЯ по последнему
     # закрытию и помечается — иначе её убыток «исчезнет» из статистики
     if pos is not None:
-        tr = _close_trade(pos, (n - 1, c[n - 1], "end_of_data"), cost_rate,
+        tr = _close_trade(pos, (n - 1, c[n - 1], "end_of_data"), exit_cost_rate,
                           funding, default_funding, tf_ms, ts, equity)
         equity = tr["equity_after"]
         trades.append(tr)
@@ -414,7 +420,12 @@ def run_backtest(df: pd.DataFrame,
         "rejected_bad_target": n_bad_target,
         "leverage_capped": int(tdf["capped"].sum()) if len(tdf) else 0,
         "bars": n,
-        "round_trip_bps": cfg.round_trip_bps(),
+        "round_trip_bps": cfg.round_trip_bps(
+            "limit" if (len(tdf) and (tdf["entry_kind"] == "limit").mean() > 0.5)
+            else "market"),
+        "cost_model": cfg.costs.get("model", "flat"),
+        "maker_fill_share": (float((tdf["entry_kind"] == "limit").mean())
+                             if len(tdf) else 0.0),
         "tf": tf,
     }
     return BacktestResult(tdf, equity_curve, ts, symbol, cfg, diagnostics)
@@ -425,6 +436,7 @@ def _empty_trades() -> pd.DataFrame:
     cols = ["direction", "entry_bar", "exit_bar", "entry_price", "exit_price",
             "stop_price", "qty", "notional", "gross_pnl", "fees", "funding",
             "net_pnl", "R", "ret_pct", "bars_held", "exit_reason", "risk",
+            "fee_in", "fee_out", "entry_kind",
             "equity_before", "equity_after", "mae_R", "mfe_R", "capped", "block"]
     return pd.DataFrame({c: pd.Series(dtype="float64") for c in cols})
 
@@ -433,7 +445,8 @@ def _unrealized(pos: dict, price: float) -> float:
     return pos["qty"] * (price - pos["entry_price"]) * pos["direction"]
 
 
-def _try_fill(it: OrderIntent, k: int, o, h, l) -> float | None:
+def _try_fill(it: OrderIntent, k: int, o, h, l,
+              maker_through: float = 0.0) -> float | None:
     """Заполнение заявки на баре k.
 
     Лимит исполняется по своей цене ИЛИ ЛУЧШЕ: если бар открылся уже за
@@ -449,9 +462,12 @@ def _try_fill(it: OrderIntent, k: int, o, h, l) -> float | None:
     if it.kind == "market":
         return float(o[k]) if k == it.signal_bar + 1 else None
     if it.kind == "limit":
-        if d > 0 and l[k] <= it.price:
+        # ОЧЕРЕДЬ: касания уровня мало, рынок должен пройти сквозь заявку.
+        # Иначе бэктест считает исполненными те лимиты, до которых в реальности
+        # просто не дошла очередь, и раздаёт мейкерную комиссию бесплатно.
+        if d > 0 and l[k] <= it.price * (1.0 - maker_through):
             return float(min(it.price, o[k]))
-        if d < 0 and h[k] >= it.price:
+        if d < 0 and h[k] >= it.price * (1.0 + maker_through):
             return float(max(it.price, o[k]))
         return None
     if it.kind == "stop":
@@ -615,8 +631,8 @@ def _manage(pos: dict, k: int, o, h, l, c, ts, tf_ms, trail_atr, struct_ema,
     return None
 
 
-def _close_trade(pos: dict, closed, cost_rate: float, funding, default_funding: float,
-                 tf_ms: int, ts, equity: float) -> dict:
+def _close_trade(pos: dict, closed, exit_cost_rate: float, funding,
+                 default_funding: float, tf_ms: int, ts, equity: float) -> dict:
     exit_bar, exit_price, reason = closed
     d = pos["direction"]
     qty = pos["qty"]
@@ -624,7 +640,11 @@ def _close_trade(pos: dict, closed, cost_rate: float, funding, default_funding: 
     notional_out = qty * exit_price
 
     gross = qty * (exit_price - pos["entry_price"]) * d
-    fees = (notional_in + notional_out) * cost_rate
+    # издержки считаются РАЗДЕЛЬНО по сторонам: вход по своему типу
+    # исполнения, выход всегда тейкерный
+    fee_in = notional_in * pos["entry_cost_rate"]
+    fee_out = notional_out * exit_cost_rate
+    fees = fee_in + fee_out
 
     t_in = int(ts[pos["entry_bar"]])
     t_out = int(ts[exit_bar]) + tf_ms
@@ -638,7 +658,9 @@ def _close_trade(pos: dict, closed, cost_rate: float, funding, default_funding: 
         "entry_price": pos["entry_price"], "exit_price": exit_price,
         "stop_price": pos["init_stop"],
         "qty": qty, "notional": notional_in,
-        "gross_pnl": gross, "fees": fees, "funding": fund, "net_pnl": net,
+        "gross_pnl": gross, "fees": fees, "fee_in": fee_in, "fee_out": fee_out,
+        "entry_kind": pos.get("entry_kind", "?"),
+        "funding": fund, "net_pnl": net,
         "R": net / risk if risk > 0 else 0.0,
         "ret_pct": net / pos["equity_before"],
         "bars_held": exit_bar - pos["entry_bar"],

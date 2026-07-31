@@ -90,6 +90,11 @@ CONFIGS = [
      "stop": {"type": "block", "params": {}},
      "exit": {"type": "fixed_rr", "params": {"rr": 2.0, "max_bars": 30}},
      "filters": []},
+    {"name": "fade_maker", "entry": {"type": "false_breakout_fade",
+                                     "params": {"entry_mode": "limit", "max_age": 3}},
+     "stop": {"type": "block", "params": {}},
+     "exit": {"type": "fixed_rr", "params": {"rr": 2.0, "max_bars": 30}},
+     "filters": []},
     {"name": "fade_opp", "entry": {"type": "false_breakout_fade",
                                    "params": {"stop_buffer": 0.002}},
      "stop": {"type": "block", "params": {}},
@@ -305,6 +310,87 @@ def test_funding_accrual():
     # шорт получает то, что платит лонг
     assert _funding_cost(None, 0.0001, t0, t0 + step, 100_000, -1) == -one
     print("  ok  funding: 8ч->10, 24ч->30, шорт зеркален")
+
+
+def test_cost_model_maker_vs_taker():
+    """Модель издержек: мейкерный вход дешевле тейкерного, полы не обходятся.
+
+    Три вещи проверяются разом, потому что все три — про одно: уточнить тариф
+    можно, занизить издержки нельзя.
+    """
+    from crypto_strat.engine.config import ConfigError
+
+    lim = StrategyConfig.from_dict(
+        {"name": "m", "entry": {"type": "order_block", "params": {}},
+         "stop": {"type": "block", "params": {}},
+         "exit": {"type": "fixed_rr", "params": {"rr": 2.0}}, "filters": []})
+    assert not lim.is_flat()
+    # мейкерный вход = только комиссия, без проскальзывания
+    assert abs(lim.entry_cost_rate("limit") - 2.0 / 10_000) < 1e-12
+    # рыночный и стоп-вход = тейкер + проскальзывание, одинаково
+    assert abs(lim.entry_cost_rate("market") - 14.5 / 10_000) < 1e-12
+    assert abs(lim.entry_cost_rate("stop") - 14.5 / 10_000) < 1e-12
+    # выход всегда тейкерный, даже у лимитной стратегии
+    assert abs(lim.exit_cost_rate() - 14.5 / 10_000) < 1e-12
+    assert abs(lim.round_trip_bps("limit") - 16.5) < 1e-9
+    assert abs(lim.round_trip_bps("market") - 29.0) < 1e-9
+
+    # полы: занизить любую из трёх ставок нельзя
+    for key, bad in (("maker_fee_bps", 0.0), ("taker_fee_bps", 3.0),
+                     ("slip_bps", 1.0)):
+        try:
+            StrategyConfig.from_dict(
+                {"name": "bad", "entry": {"type": "order_block", "params": {}},
+                 "stop": {"type": "block", "params": {}},
+                 "exit": {"type": "fixed_rr", "params": {"rr": 2.0}},
+                 "filters": [], "costs": {key: bad}})
+        except ConfigError:
+            pass
+        else:
+            raise AssertionError(f"{key}={bad} должен был быть отвергнут")
+
+    # старая плоская модель узнаётся по своим ключам и работает как раньше
+    old = StrategyConfig.from_dict(
+        {"name": "o", "entry": {"type": "order_block", "params": {}},
+         "stop": {"type": "block", "params": {}},
+         "exit": {"type": "fixed_rr", "params": {"rr": 2.0}}, "filters": [],
+         "costs": {"fee_bps_per_side": 6.0, "slip_bps_per_side": 9.0}})
+    assert old.is_flat() and abs(old.round_trip_bps() - 30.0) < 1e-9
+    assert abs(old.entry_cost_rate("limit") - old.entry_cost_rate("market")) < 1e-12
+
+    # на реальном прогоне мейкерный вход обязан стоить дешевле тейкерного
+    df = _with_ref(make_ohlcv(n=4000, regime="edge", seed=11))
+    r = run_backtest(df, lim, "T")
+    assert r.n_trades, "нужны сделки для проверки"
+    t = r.trades
+    assert (t["entry_kind"] == "limit").all(), "order block входит лимитом"
+    in_bps = (t["fee_in"] / t["notional"] * 10_000).median()
+    assert abs(in_bps - 2.0) < 0.01, f"вход должен стоить 2 bps, а стоит {in_bps}"
+    out_bps = (t["fee_out"] / (t["qty"] * t["exit_price"]) * 10_000).median()
+    assert abs(out_bps - 14.5) < 0.01, f"выход должен стоить 14.5 bps, а стоит {out_bps}"
+    print(f"  ok  maker/taker: вход {in_bps:.2f} bps, выход {out_bps:.2f} bps, "
+          f"полы держатся, плоская модель совместима")
+
+
+def test_maker_fill_requires_penetration():
+    """Лимит не считается исполненным по одному лишь касанию уровня.
+
+    Без этого бэктест раздаёт мейкерную комиссию на сделках, до которых в
+    реальности не дошла бы очередь в стакане.
+    """
+    from crypto_strat.engine.backtest import _try_fill
+    from crypto_strat.engine.blocks import OrderIntent
+
+    o = np.array([100.0, 100.0]); h = np.array([101.0, 101.0])
+    l = np.array([99.0, 100.0])
+    buy = OrderIntent(+1, 0, "limit", 100.0, {"type": "none"}, 5)
+    # касание ровно в уровень при поправке на очередь -> НЕ исполнено
+    assert _try_fill(buy, 1, o, h, l, maker_through=1e-4) is None
+    # без поправки (плоская модель) — исполнено, как было раньше
+    assert _try_fill(buy, 1, o, h, l, maker_through=0.0) is not None
+    # реальный проход сквозь заявку -> исполнено
+    assert _try_fill(buy, 1, o, h, np.array([99.0, 99.0]), maker_through=1e-4) is not None
+    print("  ok  лимит требует прохода СКВОЗЬ заявку, а не касания")
 
 
 def test_synthetic_noise_has_no_edge():

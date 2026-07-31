@@ -1053,6 +1053,8 @@ def entry_false_breakout_fade(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
     pdh, pdl = ind.prev_day_levels(ts, h, l)
     buf = float(p.get("stop_buffer", 0.0005))
     min_pen = float(p.get("min_pen_pct", 0.0))     # мин. глубина прокола
+    mode = p.get("entry_mode", "market")           # market | limit
+    max_age = int(p.get("max_age", 3))
 
     intents = []
     for i in range(len(df)):
@@ -1063,15 +1065,31 @@ def entry_false_breakout_fade(df: pd.DataFrame, p: dict) -> list[OrderIntent]:
         if up and dn:
             continue
         if up:
+            # Мейкерная версия: покоящаяся заявка на продажу У САМОГО УРОВНЯ,
+            # который только что был ложно пробит. Цена уже закрылась ниже
+            # него, значит заявка стоит ВЫШЕ рынка — это законный мейкер.
+            # Исполнится только если рынок вернётся к уровню; не вернулся —
+            # сделки нет. Именно поэтому мейкерная версия даёт МЕНЬШЕ сделок,
+            # и это не потеря, а честный учёт неисполненных лимитов.
+            kind = "limit" if mode == "limit" else "market"
+            price = float(pdh[i]) if mode == "limit" else None
             intents.append(OrderIntent(
-                -1, i, "market", None,
-                {"type": "level", "price": float(h[i]) * (1 + buf)}, 1,
+                -1, i, kind, price,
+                {"type": "level", "price": float(h[i]) * (1 + buf)},
+                max_age if mode == "limit" else 1,
+                invalidate=({"type": "close_beyond", "level": float(h[i]),
+                             "side": "above"} if mode == "limit" else {}),
                 meta={"block": "false_breakout_fade", "level": float(pdh[i]),
                       "target": float(pdl[i]), "sweep": float(h[i])}))
         elif dn:
+            kind = "limit" if mode == "limit" else "market"
+            price = float(pdl[i]) if mode == "limit" else None
             intents.append(OrderIntent(
-                +1, i, "market", None,
-                {"type": "level", "price": float(l[i]) * (1 - buf)}, 1,
+                +1, i, kind, price,
+                {"type": "level", "price": float(l[i]) * (1 - buf)},
+                max_age if mode == "limit" else 1,
+                invalidate=({"type": "close_beyond", "level": float(l[i]),
+                             "side": "below"} if mode == "limit" else {}),
                 meta={"block": "false_breakout_fade", "level": float(pdl[i]),
                       "target": float(pdh[i]), "sweep": float(l[i])}))
     return intents

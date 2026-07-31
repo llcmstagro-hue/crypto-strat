@@ -31,13 +31,52 @@ import copy
 import json
 from dataclasses import dataclass, field, asdict
 
-# Минимальный round-trip в базисных пунктах нотионала. НЕ ПОНИЖАТЬ.
+# --------------------------------------------------------------------------- #
+# ИЗДЕРЖКИ: две модели, обе с полами
+# --------------------------------------------------------------------------- #
+# Модель "flat" — как было в прогонах 1–10: плоские издержки на обе стороны,
+# round-trip >= 30 bps. Оставлена, чтобы старые конфиги из базы знаний
+# воспроизводились байт в байт. Новые гипотезы её не используют.
 MIN_ROUND_TRIP_BPS = 30.0
+LEGACY_COSTS = {
+    "model": "flat",
+    "fee_bps_per_side": 6.0,
+    "slip_bps_per_side": 9.0,
+    "funding_default_8h": 0.0001,
+}
+
+# Модель "maker_taker" — фактические ставки аккаунта на Bybit (перпы).
+# Издержка зависит от того, КАК исполнилась заявка, а не от названия стратегии:
+#   * покоящийся лимит исполняется мейкером и БЕЗ проскальзывания — цена
+#     заявки известна заранее, хуже неё не дадут;
+#   * рыночная и стоп-заявка исполняются тейкером и С проскальзыванием.
+#
+# ⚠️ ЧТО ЗДЕСЬ УТОЧНЕНО, А ЧТО НЕТ. Уточнена только КОМИССИЯ — это факт о
+# тарифе, а не предположение. Проскальзывание оставлено ровно тем же (9 bps),
+# каким было в прошлых прогонах. Снижать его «раз уж мы уточняем модель»
+# нельзя: комиссия задана биржей, а проскальзывание — это наша оценка
+# неизвестного, и подкручивать её в свою пользу — тот же самообман, что
+# снижение порогов.
+#
+# Следствие, о котором стоит помнить при чтении результатов: для РЫНОЧНЫХ
+# входов новая модель почти ничего не меняет (14.5 bps на сторону против
+# прежних 15.0), поэтому вердикты по трендовым стратегиям остаются как были.
+# Выигрывают только те, кто реально входит покоящимся лимитом.
+MIN_MAKER_FEE_BPS = 2.0      # 0.02% Bybit maker
+MIN_TAKER_FEE_BPS = 5.5      # 0.055% Bybit taker
+MIN_SLIP_BPS = 9.0           # проскальзывание тейкерного исполнения. НЕ ПОНИЖАТЬ.
 
 DEFAULT_COSTS = {
-    "fee_bps_per_side": 6.0,        # комиссия тейкера
-    "slip_bps_per_side": 9.0,       # проскальзывание
-    "funding_default_8h": 0.0001,   # 0.01% / 8ч, если нет исторического funding
+    "model": "maker_taker",
+    "maker_fee_bps": 2.0,
+    "taker_fee_bps": 5.5,
+    "slip_bps": 9.0,
+    # Поправка на ОЧЕРЕДЬ. Мейкер стоит в стакане, и того, что цена «коснулась»
+    # уровня, для исполнения мало: перед нами может стоять чужой объём.
+    # Требуем, чтобы цена прошла СКВОЗЬ заявку хотя бы на 1 bp. Это ужесточение,
+    # а не послабление: часть касаний перестаёт считаться сделками.
+    "maker_through_bps": 1.0,
+    "funding_default_8h": 0.0001,
 }
 
 DEFAULT_SIZING = {"risk_pct": 0.01, "max_leverage": 100.0}
@@ -75,23 +114,81 @@ class StrategyConfig:
             f.setdefault("params", {})
 
         self.sizing = {**DEFAULT_SIZING, **self.sizing}
-        self.costs = {**DEFAULT_COSTS, **self.costs}
 
-        rt = self.round_trip_bps()
-        if rt < MIN_ROUND_TRIP_BPS - 1e-9:
-            raise ConfigError(
-                f"round-trip издержки {rt:.1f} bps < минимума {MIN_ROUND_TRIP_BPS} bps. "
-                "Занижать издержки запрещено (р.4 барьер 7)."
-            )
+        # какая модель издержек: старые конфиги узнаются по своим ключам
+        legacy = ("fee_bps_per_side" in self.costs
+                  or "slip_bps_per_side" in self.costs
+                  or self.costs.get("model") == "flat")
+        base = LEGACY_COSTS if legacy else DEFAULT_COSTS
+        self.costs = {**base, **self.costs}
+
+        if self.is_flat():
+            rt = self.round_trip_bps()
+            if rt < MIN_ROUND_TRIP_BPS - 1e-9:
+                raise ConfigError(
+                    f"round-trip издержки {rt:.1f} bps < минимума "
+                    f"{MIN_ROUND_TRIP_BPS} bps. Занижать издержки запрещено "
+                    f"(р.4 барьер 7).")
+        else:
+            for key, floor in (("maker_fee_bps", MIN_MAKER_FEE_BPS),
+                               ("taker_fee_bps", MIN_TAKER_FEE_BPS),
+                               ("slip_bps", MIN_SLIP_BPS)):
+                if float(self.costs[key]) < floor - 1e-9:
+                    raise ConfigError(
+                        f"{key} = {self.costs[key]} bps < минимума {floor} bps. "
+                        f"Занижать издержки запрещено (р.4 барьер 7). Реальный "
+                        f"тариф — законное уточнение, оптимистичная оценка — нет.")
         if not 0 < self.sizing["risk_pct"] <= 0.05:
             raise ConfigError("risk_pct вне (0, 0.05]")
 
     # ------------------------------------------------------------------ #
-    def round_trip_bps(self) -> float:
-        return 2.0 * (self.costs["fee_bps_per_side"] + self.costs["slip_bps_per_side"])
+    def is_flat(self) -> bool:
+        return self.costs.get("model", "flat") == "flat"
+
+    def entry_cost_rate(self, kind: str) -> float:
+        """Доля нотионала, теряемая на ВХОДЕ. Зависит от типа исполнения.
+
+        Ключевое различие: покоящийся лимит («limit») — мейкер и без
+        проскальзывания, потому что цена заявки известна заранее и хуже неё
+        исполнения не будет. Рыночная и стоп-заявка («market», «stop») —
+        тейкер и с проскальзыванием.
+        """
+        if self.is_flat():
+            return self.cost_rate_per_side()
+        if kind == "limit":
+            return float(self.costs["maker_fee_bps"]) / 10_000.0
+        return (float(self.costs["taker_fee_bps"])
+                + float(self.costs["slip_bps"])) / 10_000.0
+
+    def exit_cost_rate(self) -> float:
+        """Выход всегда тейкерный: стоп, трейлинг, выход по времени и по
+        структуре — всё это исполняется по рынку. Тейк-профит формально мог бы
+        стоять лимитом, но записывать его в мейкеры мы НЕ будем: это дало бы
+        бесплатную скидку ровно на прибыльных сделках."""
+        if self.is_flat():
+            return self.cost_rate_per_side()
+        return (float(self.costs["taker_fee_bps"])
+                + float(self.costs["slip_bps"])) / 10_000.0
+
+    def round_trip_bps(self, entry_kind: str = "market") -> float:
+        if self.is_flat():
+            return 2.0 * (self.costs["fee_bps_per_side"]
+                          + self.costs["slip_bps_per_side"])
+        return 10_000.0 * (self.entry_cost_rate(entry_kind) + self.exit_cost_rate())
+
+    def maker_through(self) -> float:
+        """Доля цены, на которую рынок обязан пройти СКВОЗЬ лимитную заявку,
+        чтобы считать её исполненной. В плоской модели 0 — чтобы прогоны 1–10
+        воспроизводились без изменений."""
+        if self.is_flat():
+            return 0.0
+        return float(self.costs.get("maker_through_bps", 1.0)) / 10_000.0
 
     def cost_rate_per_side(self) -> float:
-        return (self.costs["fee_bps_per_side"] + self.costs["slip_bps_per_side"]) / 10_000.0
+        if self.is_flat():
+            return (self.costs["fee_bps_per_side"]
+                    + self.costs["slip_bps_per_side"]) / 10_000.0
+        return self.exit_cost_rate()
 
     # ---- работа с параметрами по точечному пути (нужна барьеру стабильности) ---- #
     @staticmethod

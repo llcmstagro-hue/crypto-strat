@@ -1,0 +1,693 @@
+{
+  "tf": "4h",
+  "primary": "BTCUSDT",
+  "data_span": "2017-08-17..2026-07-29",
+  "spans": {
+    "BTCUSDT": [
+      "2017-08-17",
+      "2026-07-29",
+      19593
+    ],
+    "ETHUSDT": [
+      "2017-08-17",
+      "2026-07-29",
+      19596
+    ],
+    "SOLUSDT": [
+      "2020-08-11",
+      "2026-07-29",
+      13070
+    ],
+    "BNBUSDT": [
+      "2017-11-06",
+      "2026-07-29",
+      19112
+    ],
+    "DOGEUSDT": [
+      "2019-07-05",
+      "2026-07-29",
+      15484
+    ]
+  },
+  "has_volume": false,
+  "pool_size": 7,
+  "trials_total": 103228,
+  "trials_selection": 5135,
+  "kb_stats": {
+    "всего гипотез": 276,
+    "дошли до бэктеста": 257,
+    "отсеяны до бэктеста": 19,
+    "выжили": 0
+  },
+  "by_type": [
+    {
+      "тип": "breakout",
+      "всего": 47,
+      "тестировано": 40,
+      "выжило": 0,
+      "ср_барьеров": 4.42,
+      "ср_робастность": 0.74
+    },
+    {
+      "тип": "ensemble",
+      "всего": 23,
+      "тестировано": 11,
+      "выжило": 0,
+      "ср_барьеров": 4.36,
+      "ср_робастность": 0.637
+    },
+    {
+      "тип": "trend",
+      "всего": 10,
+      "тестировано": 10,
+      "выжило": 0,
+      "ср_барьеров": 4.2,
+      "ср_робастность": 0.623
+    },
+    {
+      "тип": "volatility",
+      "всего": 48,
+      "тестировано": 48,
+      "выжило": 0,
+      "ср_барьеров": 3.73,
+      "ср_робастность": 0.569
+    },
+    {
+      "тип": "cross-market",
+      "всего": 50,
+      "тестировано": 50,
+      "выжило": 0,
+      "ср_барьеров": 3.7,
+      "ср_робастность": 0.645
+    },
+    {
+      "тип": "SMC",
+      "всего": 39,
+      "тестировано": 39,
+      "выжило": 0,
+      "ср_барьеров": 2.92,
+      "ср_робастность": 0.462
+    },
+    {
+      "тип": "momentum",
+      "всего": 18,
+      "тестировано": 18,
+      "выжило": 0,
+      "ср_барьеров": 2.44,
+      "ср_робастность": 0.476
+    },
+    {
+      "тип": "pattern",
+      "всего": 5,
+      "тестировано": 5,
+      "выжило": 0,
+      "ср_барьеров": 1.8,
+      "ср_робастность": 0.269
+    },
+    {
+      "тип": "mean-reversion",
+      "всего": 36,
+      "тестировано": 36,
+      "выжило": 0,
+      "ср_барьеров": 1.19,
+      "ср_робастность": 0.177
+    }
+  ],
+  "failure_reasons": [
+    [
+      "5. Поправка на multiple testing",
+      256
+    ],
+    [
+      "1. Out-of-sample",
+      226
+    ],
+    [
+      "2. Walk-forward",
+      210
+    ],
+    [
+      "6. Стабильность параметров",
+      84
+    ],
+    [
+      "3. Кросс-инструмент",
+      83
+    ],
+    [
+      "7. Реалистичные издержки",
+      69
+    ],
+    [
+      "4. Минимум сделок",
+      30
+    ]
+  ],
+  "results": [
+    {
+      "name": "rc_level_retest_4h",
+      "type": "SMC",
+      "score": 89,
+      "barriers": 4,
+      "robustness": 0.6709,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1874,
+        "winrate": 0.31963713980789754,
+        "profit_factor": 1.4059664799291067,
+        "expectancy_R": 0.24709967949193967,
+        "sharpe_trade": 0.07145982248861812,
+        "total_R": 463.0647993678945,
+        "max_dd_R": 38.227883521916226,
+        "max_loss_streak": 20,
+        "profit_concentration": {
+          "top_share": 0.13050772653130088,
+          "median_R": -0.9205202658737133,
+          "max_R": 97.96436289022812,
+          "n": 1874,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "rc_level_retest_4h|max_age=60,stop_atr_mult=2.0,mult=3.5",
+        "entry": {
+          "type": "level_retest",
+          "params": {
+            "swing_left": 3,
+            "swing_right": 3,
+            "max_age": 60,
+            "stop_atr_mult": 2.0,
+            "atr_period": 14
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.5,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "maker_taker",
+          "maker_fee_bps": 2.0,
+          "taker_fee_bps": 5.5,
+          "slip_bps": 9.0,
+          "maker_through_bps": 1.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "перерасчёт кандидатов на реальных ставках Bybit (maker 0.02% / taker 0.055%), проскальзывание не менялось; методология трейдера (р.6.5 п.4)",
+          "cost_model": "maker 2 / taker 5.5 / slip 9 bps"
+        }
+      }
+    },
+    {
+      "name": "rc_fvg_4h",
+      "type": "SMC",
+      "score": 89,
+      "barriers": 3,
+      "robustness": 0.4433,
+      "regimes_ok": true,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 6161,
+        "winrate": 0.4614510631391008,
+        "profit_factor": 0.9982412158128267,
+        "expectancy_R": -0.0010976085465401859,
+        "sharpe_trade": -0.0008749651603095338,
+        "total_R": -6.76236625523406,
+        "max_dd_R": 152.70540817523184,
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.002001781244556568,
+          "median_R": -1.0398051268953947,
+          "max_R": 1.548882458857731,
+          "n": 6161,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "rc_fvg_4h|max_age=20,min_size_pct=0.004,rr=1.5",
+        "entry": {
+          "type": "fvg",
+          "params": {
+            "min_size_pct": 0.004,
+            "max_age": 20,
+            "stop_buffer": 0.0005
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "fixed_rr",
+          "params": {
+            "rr": 1.5,
+            "max_bars": 120
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "maker_taker",
+          "maker_fee_bps": 2.0,
+          "taker_fee_bps": 5.5,
+          "slip_bps": 9.0,
+          "maker_through_bps": 1.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "перерасчёт кандидатов на реальных ставках Bybit (maker 0.02% / taker 0.055%), проскальзывание не менялось; методология трейдера (р.6.5 п.4)",
+          "cost_model": "maker 2 / taker 5.5 / slip 9 bps"
+        }
+      }
+    },
+    {
+      "name": "rc_order_block_4h",
+      "type": "SMC",
+      "score": 97,
+      "barriers": 2,
+      "robustness": 0.3281,
+      "regimes_ok": true,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 3571,
+        "winrate": 0.4662559507140857,
+        "profit_factor": 1.0733470011244057,
+        "expectancy_R": 0.04398031350035176,
+        "sharpe_trade": 0.035079091092218705,
+        "total_R": 157.05369950975626,
+        "max_dd_R": 63.98208711693621,
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.003304718009297304,
+          "median_R": -1.030434498127172,
+          "max_R": 1.5536224284334506,
+          "n": 3571,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "rc_order_block_4h|ob_max_age=60,swing_left=3,rr=1.5",
+        "entry": {
+          "type": "order_block",
+          "params": {
+            "swing_left": 3,
+            "swing_right": 3,
+            "ob_max_age": 60,
+            "stop_buffer": 0.0005
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "fixed_rr",
+          "params": {
+            "rr": 1.5,
+            "max_bars": 120
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "maker_taker",
+          "maker_fee_bps": 2.0,
+          "taker_fee_bps": 5.5,
+          "slip_bps": 9.0,
+          "maker_through_bps": 1.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "перерасчёт кандидатов на реальных ставках Bybit (maker 0.02% / taker 0.055%), проскальзывание не менялось; методология трейдера (р.6.5 п.4)",
+          "cost_model": "maker 2 / taker 5.5 / slip 9 bps"
+        }
+      }
+    },
+    {
+      "name": "rc_fade_opposite_htf_4h",
+      "type": "mean-reversion",
+      "score": 100,
+      "barriers": 1,
+      "robustness": 0.0875,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 3340,
+        "winrate": 0.17275449101796408,
+        "profit_factor": 0.7711954669792478,
+        "expectancy_R": -0.2684951934537344,
+        "sharpe_trade": -0.07618177256940831,
+        "total_R": -896.7739461354713,
+        "max_dd_R": 933.1388030417938,
+        "max_loss_streak": 49,
+        "profit_concentration": {
+          "top_share": 0.08115595429225737,
+          "median_R": -1.1933698345284267,
+          "max_R": 65.5017037037162,
+          "n": 3340,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "rc_fade_opposite_htf_4h|max_age=3,ema_period=30",
+        "entry": {
+          "type": "false_breakout_fade",
+          "params": {
+            "stop_buffer": 0.0005,
+            "entry_mode": "limit",
+            "max_age": 3
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "level_target",
+          "params": {
+            "max_bars": 30
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "htf_trend",
+            "params": {
+              "factor": 6,
+              "ema_period": 30
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "maker_taker",
+          "maker_fee_bps": 2.0,
+          "taker_fee_bps": 5.5,
+          "slip_bps": 9.0,
+          "maker_through_bps": 1.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "перерасчёт кандидатов на реальных ставках Bybit (maker 0.02% / taker 0.055%), проскальзывание не менялось; методология трейдера (р.6.5 п.4)",
+          "cost_model": "maker 2 / taker 5.5 / slip 9 bps"
+        }
+      }
+    },
+    {
+      "name": "rc_fade_opposite_4h",
+      "type": "mean-reversion",
+      "score": 100,
+      "barriers": 1,
+      "robustness": 0.0281,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 6302,
+        "winrate": 0.1712154871469375,
+        "profit_factor": 0.7406524787957637,
+        "expectancy_R": -0.30030942820306017,
+        "sharpe_trade": -0.08468866802344319,
+        "total_R": -1892.5500165356789,
+        "max_dd_R": 1904.7204698817225,
+        "max_loss_streak": 39,
+        "profit_concentration": {
+          "top_share": 0.05935703664961412,
+          "median_R": -1.1828395573756647,
+          "max_R": 73.22472420901393,
+          "n": 6302,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "rc_fade_opposite_4h|max_age=2,max_bars=30",
+        "entry": {
+          "type": "false_breakout_fade",
+          "params": {
+            "stop_buffer": 0.0005,
+            "entry_mode": "limit",
+            "max_age": 2
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "level_target",
+          "params": {
+            "max_bars": 30
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "maker_taker",
+          "maker_fee_bps": 2.0,
+          "taker_fee_bps": 5.5,
+          "slip_bps": 9.0,
+          "maker_through_bps": 1.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "перерасчёт кандидатов на реальных ставках Bybit (maker 0.02% / taker 0.055%), проскальзывание не менялось; методология трейдера (р.6.5 п.4)",
+          "cost_model": "maker 2 / taker 5.5 / slip 9 bps"
+        }
+      }
+    },
+    {
+      "name": "rc_fade_rr_htf_4h",
+      "type": "mean-reversion",
+      "score": 100,
+      "barriers": 1,
+      "robustness": 0.0281,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 3645,
+        "winrate": 0.2776406035665295,
+        "profit_factor": 0.5664556754144013,
+        "expectancy_R": -0.4584748229074112,
+        "sharpe_trade": -0.27045657703536663,
+        "total_R": -1671.1407294975156,
+        "max_dd_R": 1682.409426790534,
+        "max_loss_streak": 18,
+        "profit_concentration": {
+          "top_share": 0.005706566518698266,
+          "median_R": -1.1559458961816191,
+          "max_R": 2.499899300827308,
+          "n": 3645,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "rc_fade_rr_htf_4h|rr=2.5,ema_period=30",
+        "entry": {
+          "type": "false_breakout_fade",
+          "params": {
+            "stop_buffer": 0.0005,
+            "entry_mode": "limit",
+            "max_age": 3
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "fixed_rr",
+          "params": {
+            "rr": 2.5,
+            "max_bars": 30
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "htf_trend",
+            "params": {
+              "factor": 6,
+              "ema_period": 30
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "maker_taker",
+          "maker_fee_bps": 2.0,
+          "taker_fee_bps": 5.5,
+          "slip_bps": 9.0,
+          "maker_through_bps": 1.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "перерасчёт кандидатов на реальных ставках Bybit (maker 0.02% / taker 0.055%), проскальзывание не менялось; методология трейдера (р.6.5 п.4)",
+          "cost_model": "maker 2 / taker 5.5 / slip 9 bps"
+        }
+      }
+    },
+    {
+      "name": "rc_fade_rr_4h",
+      "type": "mean-reversion",
+      "score": 100,
+      "barriers": 1,
+      "robustness": 0.0,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 7158,
+        "winrate": 0.27884884045822855,
+        "profit_factor": 0.5790866298391159,
+        "expectancy_R": -0.43809165764223007,
+        "sharpe_trade": -0.2595206193461314,
+        "total_R": -3135.860085403087,
+        "max_dd_R": 3141.206827763019,
+        "max_loss_streak": 27,
+        "profit_concentration": {
+          "top_share": 0.0028965194911331547,
+          "median_R": -1.1477962203689693,
+          "max_R": 2.500482444824705,
+          "n": 7158,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "rc_fade_rr_4h|max_age=2,rr=2.5",
+        "entry": {
+          "type": "false_breakout_fade",
+          "params": {
+            "stop_buffer": 0.0005,
+            "entry_mode": "limit",
+            "max_age": 2
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "fixed_rr",
+          "params": {
+            "rr": 2.5,
+            "max_bars": 30
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "maker_taker",
+          "maker_fee_bps": 2.0,
+          "taker_fee_bps": 5.5,
+          "slip_bps": 9.0,
+          "maker_through_bps": 1.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "перерасчёт кандидатов на реальных ставках Bybit (maker 0.02% / taker 0.055%), проскальзывание не менялось; методология трейдера (р.6.5 п.4)",
+          "cost_model": "maker 2 / taker 5.5 / slip 9 bps"
+        }
+      }
+    }
+  ],
+  "elapsed_min": 1.7
+}
