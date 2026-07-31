@@ -39,7 +39,7 @@
 
 from __future__ import annotations
 
-from ..engine.config import StrategyConfig
+from ..engine.config import StrategyConfig, LEGACY_COSTS
 from ..validation.hypothesis import Hypothesis
 from .score import Idea
 
@@ -114,7 +114,7 @@ def _cfg(name, entry, stop, exit_, filters, tf, risk=0.01) -> StrategyConfig:
     return StrategyConfig.from_dict({
         "name": f"{name}_{tf}", "direction": "both", "timeframe": tf,
         "entry": entry, "stop": stop, "exit": exit_, "filters": filters,
-        "sizing": {"risk_pct": risk},
+        "sizing": {"risk_pct": risk}, "costs": dict(LEGACY_COSTS),
         "meta": {"source": "; ".join(SRC), "external": "Courtney Smith"},
     })
 

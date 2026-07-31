@@ -26,7 +26,7 @@
 
 from __future__ import annotations
 
-from ..engine.config import StrategyConfig
+from ..engine.config import StrategyConfig, LEGACY_COSTS
 from ..validation.hypothesis import Hypothesis
 from .score import Idea
 
@@ -91,6 +91,7 @@ def _cfg(name, entry, filters, tf="4h") -> StrategyConfig:
         "name": name, "direction": "both", "timeframe": tf,
         "entry": entry, "stop": dict(ATR_STOP), "exit": dict(TRAIL),
         "filters": filters, "sizing": {"risk_pct": 0.01},
+        "costs": dict(LEGACY_COSTS),
         "meta": {"path": "Б: ансамбли согласия"},
     })
 
@@ -326,6 +327,7 @@ def conqueror_pool(tf: str = "1d") -> list[tuple[Hypothesis, Idea]]:
                 "atr_period": 40, "base_mult": base, "narrow_factor": 2.0 / 3.0,
                 "sma_period": 10, "slope_lookback": 10, "mom_lookback": 40}},
             "filters": [], "sizing": {"risk_pct": 0.005},
+            "costs": dict(LEGACY_COSTS),
             "meta": {"source": "; ".join(src), "external": "Conqueror"},
         })
         # Сетка НАМЕРЕННО узкая: это ВНЕШНЯЯ стратегия с авторскими

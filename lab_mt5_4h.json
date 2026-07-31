@@ -1,0 +1,629 @@
+{
+  "tf": "4h",
+  "primary": "BTCUSDT",
+  "data_span": "2017-08-17..2026-07-29",
+  "spans": {
+    "BTCUSDT": [
+      "2017-08-17",
+      "2026-07-29",
+      19593
+    ],
+    "ETHUSDT": [
+      "2017-08-17",
+      "2026-07-29",
+      19596
+    ],
+    "SOLUSDT": [
+      "2020-08-11",
+      "2026-07-29",
+      13070
+    ],
+    "BNBUSDT": [
+      "2017-11-06",
+      "2026-07-29",
+      19112
+    ],
+    "DOGEUSDT": [
+      "2019-07-05",
+      "2026-07-29",
+      15484
+    ]
+  },
+  "has_volume": false,
+  "pool_size": 6,
+  "trials_total": 110858,
+  "trials_selection": 5426,
+  "kb_stats": {
+    "всего гипотез": 286,
+    "дошли до бэктеста": 267,
+    "отсеяны до бэктеста": 19,
+    "выжили": 0
+  },
+  "by_type": [
+    {
+      "тип": "breakout",
+      "всего": 49,
+      "тестировано": 42,
+      "выжило": 0,
+      "ср_барьеров": 4.5,
+      "ср_робастность": 0.742
+    },
+    {
+      "тип": "ensemble",
+      "всего": 24,
+      "тестировано": 12,
+      "выжило": 0,
+      "ср_барьеров": 4.5,
+      "ср_робастность": 0.655
+    },
+    {
+      "тип": "trend",
+      "всего": 10,
+      "тестировано": 10,
+      "выжило": 0,
+      "ср_барьеров": 4.2,
+      "ср_робастность": 0.623
+    },
+    {
+      "тип": "cross-market",
+      "всего": 51,
+      "тестировано": 51,
+      "выжило": 0,
+      "ср_барьеров": 3.75,
+      "ср_робастность": 0.648
+    },
+    {
+      "тип": "volatility",
+      "всего": 48,
+      "тестировано": 48,
+      "выжило": 0,
+      "ср_барьеров": 3.73,
+      "ср_робастность": 0.569
+    },
+    {
+      "тип": "SMC",
+      "всего": 41,
+      "тестировано": 41,
+      "выжило": 0,
+      "ср_барьеров": 2.9,
+      "ср_робастность": 0.46
+    },
+    {
+      "тип": "momentum",
+      "всего": 18,
+      "тестировано": 18,
+      "выжило": 0,
+      "ср_барьеров": 2.44,
+      "ср_робастность": 0.476
+    },
+    {
+      "тип": "pattern",
+      "всего": 5,
+      "тестировано": 5,
+      "выжило": 0,
+      "ср_барьеров": 1.8,
+      "ср_робастность": 0.269
+    },
+    {
+      "тип": "mean-reversion",
+      "всего": 40,
+      "тестировано": 40,
+      "выжило": 0,
+      "ср_барьеров": 1.18,
+      "ср_робастность": 0.162
+    }
+  ],
+  "failure_reasons": [
+    [
+      "5. Поправка на multiple testing",
+      266
+    ],
+    [
+      "1. Out-of-sample",
+      232
+    ],
+    [
+      "2. Walk-forward",
+      216
+    ],
+    [
+      "6. Стабильность параметров",
+      89
+    ],
+    [
+      "3. Кросс-инструмент",
+      88
+    ],
+    [
+      "7. Реалистичные издержки",
+      74
+    ],
+    [
+      "4. Минимум сделок",
+      30
+    ]
+  ],
+  "results": [
+    {
+      "name": "mt5_ens_keltner_x_nr_btcfilter",
+      "type": "ensemble",
+      "score": 89,
+      "barriers": 6,
+      "robustness": 0.8523,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1258,
+        "winrate": 0.37042925278219396,
+        "profit_factor": 1.512654176821908,
+        "expectancy_R": 0.24478984505895562,
+        "sharpe_trade": 0.11905531175317073,
+        "total_R": 307.94562508416664,
+        "max_dd_R": 16.147927474949483,
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.09148412872367578,
+          "median_R": -0.4251256701889189,
+          "max_R": 24.780008861515174,
+          "n": 1258,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "mt5_ens_keltner_x_nr_btcfilter|window=12,ema_period=50,mult=2.5",
+        "entry": {
+          "type": "consensus",
+          "params": {
+            "components": [
+              {
+                "type": "keltner_breakout",
+                "params": {}
+              },
+              {
+                "type": "nr_expansion",
+                "params": {}
+              }
+            ],
+            "window": 12,
+            "min_agree": 2
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.5
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "ref_trend",
+            "params": {
+              "ref": "BTCUSDT",
+              "ema_period": 50
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "mt5",
+          "fee_bps_per_side": 3.25,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "path": "Б: ансамбли согласия",
+          "cost_model": "MT5/CFT: 3.25 bps/сторона (замер по счёту) + 9 bps проскальзывания"
+        }
+      }
+    },
+    {
+      "name": "mt5_xmkt_donchian_btc_filter+stop_structure",
+      "type": "cross-market",
+      "score": 92,
+      "barriers": 6,
+      "robustness": 0.8178,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 933,
+        "winrate": 0.3804930332261522,
+        "profit_factor": 1.4505213260256389,
+        "expectancy_R": 0.09929032373531493,
+        "sharpe_trade": 0.11169865267169568,
+        "total_R": 92.63787204504888,
+        "max_dd_R": 8.3508852863621,
+        "max_loss_streak": 11,
+        "profit_concentration": {
+          "top_share": 0.09566430621836762,
+          "median_R": -0.16238495997200142,
+          "max_R": 6.900045996881865,
+          "n": 933,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "mt5_xmkt_donchian_btc_filter+stop_structure|period=55,lookback=40",
+        "entry": {
+          "type": "donchian_breakout",
+          "params": {
+            "period": 55
+          }
+        },
+        "stop": {
+          "type": "structure",
+          "params": {
+            "lookback": 40,
+            "buffer": 0.0005
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "ref_trend",
+            "params": {
+              "ref": "BTCUSDT",
+              "ema_period": 50
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "mt5",
+          "fee_bps_per_side": 3.25,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Bitcoin's lagged effect on altcoins (DergiPark); NARDL: asymmetric effect of bitcoin on altcoins; комбинаторика блоков (р.6.5 п.4)",
+          "rationale": "Не новый сигнал, а новый ФИЛЬТР: пробой на альте берётся только по направлению тренда BTC. Гипотеза в том, что пробои альтов против ведущего рынка — ложные, потому что у альтов нет собственного потока новостей такой силы.",
+          "evolution": "stop_structure",
+          "parent": "xmkt_donchian_btc_filter",
+          "cost_model": "MT5/CFT: 3.25 bps/сторона (замер по счёту) + 9 bps проскальзывания"
+        }
+      }
+    },
+    {
+      "name": "mt5_donchian_breakout+filter_htf",
+      "type": "breakout",
+      "score": 100,
+      "barriers": 6,
+      "robustness": 0.7771,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1114,
+        "winrate": 0.3590664272890485,
+        "profit_factor": 1.792237793877834,
+        "expectancy_R": 0.43886715926589914,
+        "sharpe_trade": 0.1525335616799855,
+        "total_R": 488.8980154222118,
+        "max_dd_R": 26.306052963840386,
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.11039664808789476,
+          "median_R": -0.65227667494527,
+          "max_R": 33.29520695184262,
+          "n": 1114,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "mt5_donchian_breakout+filter_htf|period=30,ema_period=100",
+        "entry": {
+          "type": "donchian_breakout",
+          "params": {
+            "period": 30
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.0
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "htf_trend",
+            "params": {
+              "factor": 6,
+              "ema_period": 100
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "mt5",
+          "fee_bps_per_side": 3.25,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Kaufman, Trading Systems and Methods; система Дончиана/«черепах»",
+          "rationale": "Цена, вышедшая за экстремум N последних баров, чаще продолжает движение, чем разворачивается: пробой выбивает стопы противоположной стороны и запускает поток вынужденных заявок. Плюс участники, ждавшие подтверждения, входят именно на пробое. Механизм не зависит от инструмента.",
+          "evolution": "filter_htf",
+          "parent": "donchian_breakout",
+          "cost_model": "MT5/CFT: 3.25 bps/сторона (замер по счёту) + 9 bps проскальзывания"
+        }
+      }
+    },
+    {
+      "name": "mt5_keltner_breakout+stop_channel",
+      "type": "breakout",
+      "score": 100,
+      "barriers": 6,
+      "robustness": 0.764,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1471,
+        "winrate": 0.3929299796057104,
+        "profit_factor": 1.6483815194553733,
+        "expectancy_R": 0.1466985998339482,
+        "sharpe_trade": 0.13298937371429004,
+        "total_R": 215.79364035573772,
+        "max_dd_R": 9.54858782493838,
+        "max_loss_streak": 12,
+        "profit_concentration": {
+          "top_share": 0.09510299241714333,
+          "median_R": -0.17556776812238567,
+          "max_R": 14.402632205334944,
+          "n": 1471,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "mt5_keltner_breakout+stop_channel|ema_period=40,mult=2.5,period=40",
+        "entry": {
+          "type": "keltner_breakout",
+          "params": {
+            "ema_period": 40,
+            "atr_period": 14,
+            "mult": 2.5
+          }
+        },
+        "stop": {
+          "type": "channel",
+          "params": {
+            "period": 40
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "mt5",
+          "fee_bps_per_side": 3.25,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Kaufman, Trading Systems and Methods; каналы Кельтнера",
+          "rationale": "Волатильностный пробой: граница отмеряется в ATR от средней, а не по ценовому экстремуму. Сигнал возникает, когда движение выходит за рамки обычного шума ДАННОГО периода, что автоматически подстраивается под смену волатильности — в отличие от фиксированного окна Дончиана.",
+          "evolution": "stop_channel",
+          "parent": "keltner_breakout",
+          "cost_model": "MT5/CFT: 3.25 bps/сторона (замер по счёту) + 9 bps проскальзывания"
+        }
+      }
+    },
+    {
+      "name": "mt5_level_retest",
+      "type": "SMC",
+      "score": 97,
+      "barriers": 4,
+      "robustness": 0.6401,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 1874,
+        "winrate": 0.31750266808964783,
+        "profit_factor": 1.3733186120001313,
+        "expectancy_R": 0.23212528238632055,
+        "sharpe_trade": 0.06704000798696466,
+        "total_R": 435.0027791919646,
+        "max_dd_R": 40.952492770672336,
+        "max_loss_streak": 24,
+        "profit_concentration": {
+          "top_share": 0.13070745642778284,
+          "median_R": -0.9323337131001018,
+          "max_R": 97.96966509192893,
+          "n": 1874,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "mt5_level_retest|max_age=60,stop_atr_mult=2.0,mult=3.5",
+        "entry": {
+          "type": "level_retest",
+          "params": {
+            "swing_left": 3,
+            "swing_right": 3,
+            "max_age": 60,
+            "stop_atr_mult": 2.0,
+            "atr_period": 14
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.5,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "mt5",
+          "fee_bps_per_side": 3.25,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "классика технического анализа; методология трейдера",
+          "rationale": "Пробитый уровень меняет роль: бывшее сопротивление становится поддержкой. Вход на ретесте даёт лучшую цену, чем вход на самом пробое, и более близкий стоп. Классика горизонтальных уровней.",
+          "cost_model": "MT5/CFT: 3.25 bps/сторона (замер по счёту) + 9 bps проскальзывания"
+        }
+      }
+    },
+    {
+      "name": "mt5_order_block",
+      "type": "SMC",
+      "score": 97,
+      "barriers": 1,
+      "robustness": 0.1874,
+      "regimes_ok": true,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 3580,
+        "winrate": 0.4701117318435754,
+        "profit_factor": 0.991679154224572,
+        "expectancy_R": -0.005212835069780619,
+        "sharpe_trade": -0.004138163165390633,
+        "total_R": -18.661949549814643,
+        "max_dd_R": 140.1168471099475,
+        "max_loss_streak": 13,
+        "profit_concentration": {
+          "top_share": 0.0033660394036893215,
+          "median_R": -1.0457449742846165,
+          "max_R": 1.5099607781737028,
+          "n": 3580,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "6. Стабильность параметров",
+        "3. Кросс-инструмент",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing",
+        "7. Реалистичные издержки"
+      ],
+      "config": {
+        "name": "mt5_order_block|ob_max_age=60,swing_left=3,rr=1.5",
+        "entry": {
+          "type": "order_block",
+          "params": {
+            "swing_left": 3,
+            "swing_right": 3,
+            "ob_max_age": 60,
+            "stop_buffer": 0.0005
+          }
+        },
+        "stop": {
+          "type": "block",
+          "params": {}
+        },
+        "exit": {
+          "type": "fixed_rr",
+          "params": {
+            "rr": 1.5,
+            "max_bars": 120
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "mt5",
+          "fee_bps_per_side": 3.25,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "методология трейдера (р.6.5 п.4); SMC / order block",
+          "rationale": "После слома структуры цена часто возвращается к последней противоположной свече импульса — зоне, где остались неисполненные заявки крупного участника. Вход лимитом в зону даёт близкий стоп за её границей.",
+          "cost_model": "MT5/CFT: 3.25 bps/сторона (замер по счёту) + 9 bps проскальзывания"
+        }
+      }
+    }
+  ],
+  "elapsed_min": 2.0
+}

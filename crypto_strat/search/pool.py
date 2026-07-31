@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 
-from ..engine.config import StrategyConfig
+from ..engine.config import StrategyConfig, LEGACY_COSTS
 from ..validation.hypothesis import Hypothesis
 from .score import Idea
 
@@ -28,7 +28,7 @@ def _mk(name, entry, stop, exit_, filters, grid, idea: Idea,
     cfg = StrategyConfig.from_dict({
         "name": name, "direction": direction, "timeframe": "4h",
         "entry": entry, "stop": stop, "exit": exit_, "filters": filters,
-        "sizing": {"risk_pct": 0.01},
+        "sizing": {"risk_pct": 0.01}, "costs": dict(LEGACY_COSTS),
         "meta": {"source": "; ".join(idea.sources), "rationale": idea.rationale},
     })
     src = idea.sources[0] if idea.sources else ""

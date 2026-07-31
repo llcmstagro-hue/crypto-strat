@@ -1,0 +1,458 @@
+{
+  "tf": "1d",
+  "primary": "BTCUSDT",
+  "data_span": "2017-08-18..2026-07-28",
+  "spans": {
+    "BTCUSDT": [
+      "2017-08-18",
+      "2026-07-28",
+      3257
+    ],
+    "ETHUSDT": [
+      "2017-08-18",
+      "2026-07-28",
+      3258
+    ],
+    "SOLUSDT": [
+      "2020-08-12",
+      "2026-07-28",
+      2177
+    ],
+    "BNBUSDT": [
+      "2017-11-06",
+      "2026-07-28",
+      3179
+    ],
+    "DOGEUSDT": [
+      "2019-07-06",
+      "2026-07-28",
+      2578
+    ]
+  },
+  "has_volume": false,
+  "pool_size": 4,
+  "trials_total": 111209,
+  "trials_selection": 5483,
+  "kb_stats": {
+    "всего гипотез": 290,
+    "дошли до бэктеста": 271,
+    "отсеяны до бэктеста": 19,
+    "выжили": 0
+  },
+  "by_type": [
+    {
+      "тип": "breakout",
+      "всего": 51,
+      "тестировано": 44,
+      "выжило": 0,
+      "ср_барьеров": 4.5,
+      "ср_робастность": 0.748
+    },
+    {
+      "тип": "ensemble",
+      "всего": 24,
+      "тестировано": 12,
+      "выжило": 0,
+      "ср_барьеров": 4.5,
+      "ср_робастность": 0.655
+    },
+    {
+      "тип": "trend",
+      "всего": 12,
+      "тестировано": 12,
+      "выжило": 0,
+      "ср_барьеров": 4.42,
+      "ср_робастность": 0.662
+    },
+    {
+      "тип": "cross-market",
+      "всего": 51,
+      "тестировано": 51,
+      "выжило": 0,
+      "ср_барьеров": 3.75,
+      "ср_робастность": 0.648
+    },
+    {
+      "тип": "volatility",
+      "всего": 48,
+      "тестировано": 48,
+      "выжило": 0,
+      "ср_барьеров": 3.73,
+      "ср_робастность": 0.569
+    },
+    {
+      "тип": "SMC",
+      "всего": 41,
+      "тестировано": 41,
+      "выжило": 0,
+      "ср_барьеров": 2.9,
+      "ср_робастность": 0.46
+    },
+    {
+      "тип": "momentum",
+      "всего": 18,
+      "тестировано": 18,
+      "выжило": 0,
+      "ср_барьеров": 2.44,
+      "ср_робастность": 0.476
+    },
+    {
+      "тип": "pattern",
+      "всего": 5,
+      "тестировано": 5,
+      "выжило": 0,
+      "ср_барьеров": 1.8,
+      "ср_робастность": 0.269
+    },
+    {
+      "тип": "mean-reversion",
+      "всего": 40,
+      "тестировано": 40,
+      "выжило": 0,
+      "ср_барьеров": 1.18,
+      "ср_робастность": 0.162
+    }
+  ],
+  "failure_reasons": [
+    [
+      "5. Поправка на multiple testing",
+      270
+    ],
+    [
+      "1. Out-of-sample",
+      235
+    ],
+    [
+      "2. Walk-forward",
+      217
+    ],
+    [
+      "6. Стабильность параметров",
+      89
+    ],
+    [
+      "3. Кросс-инструмент",
+      88
+    ],
+    [
+      "7. Реалистичные издержки",
+      74
+    ],
+    [
+      "4. Минимум сделок",
+      30
+    ]
+  ],
+  "results": [
+    {
+      "name": "mt5_smith_trend_analysis_1d",
+      "type": "trend",
+      "score": 100,
+      "barriers": 6,
+      "robustness": 0.846,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 836,
+        "winrate": 0.388755980861244,
+        "profit_factor": 1.8114523179651778,
+        "expectancy_R": 0.24138881683560545,
+        "sharpe_trade": 0.12111175820091616,
+        "total_R": 201.80105087456622,
+        "max_dd_R": 10.73790573072884,
+        "max_loss_streak": 16,
+        "profit_concentration": {
+          "top_share": 0.2300496488700351,
+          "median_R": -0.17207171922711562,
+          "max_R": 28.706852415646683,
+          "n": 836,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "mt5_smith_trend_analysis_1d|swing_left=2,swing_left=2",
+        "entry": {
+          "type": "trend_swings",
+          "params": {
+            "swing_left": 2,
+            "swing_right": 1,
+            "buffer": 0.0002
+          }
+        },
+        "stop": {
+          "type": "structure",
+          "params": {
+            "lookback": 10,
+            "buffer": 0.0005
+          }
+        },
+        "exit": {
+          "type": "swing_structure",
+          "params": {
+            "swing_left": 2,
+            "swing_right": 1,
+            "stop_buffer": 0.0005
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "mt5",
+          "fee_bps_per_side": 3.25,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith",
+          "cost_model": "MT5/CFT: 3.25 bps/сторона (замер по счёту) + 9 bps проскальзывания"
+        }
+      }
+    },
+    {
+      "name": "mt5_keltner_breakout+filter_vol_regime",
+      "type": "breakout",
+      "score": 100,
+      "barriers": 5,
+      "robustness": 0.9798,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 252,
+        "winrate": 0.42857142857142855,
+        "profit_factor": 2.5573856372070667,
+        "expectancy_R": 0.7545001268682818,
+        "sharpe_trade": 0.20894581342058874,
+        "total_R": 190.13403197080697,
+        "max_dd_R": 11.386022999567857,
+        "max_loss_streak": 7,
+        "profit_concentration": {
+          "top_share": 0.34604178620177733,
+          "median_R": -0.38011176031267724,
+          "max_R": 28.82689200427961,
+          "n": 252,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "mt5_keltner_breakout+filter_vol_regime|ema_period=20,mult=2.5,min_pct=0.004",
+        "entry": {
+          "type": "keltner_breakout",
+          "params": {
+            "ema_period": 20,
+            "atr_period": 14,
+            "mult": 2.5
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 14,
+            "mult": 2.0
+          }
+        },
+        "exit": {
+          "type": "trailing_atr",
+          "params": {
+            "period": 14,
+            "mult": 3.0,
+            "max_bars": 240
+          }
+        },
+        "direction": "both",
+        "timeframe": "4h",
+        "filters": [
+          {
+            "type": "atr_regime",
+            "params": {
+              "min_pct": 0.004,
+              "max_pct": 0.2
+            }
+          }
+        ],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "mt5",
+          "fee_bps_per_side": 3.25,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Kaufman, Trading Systems and Methods; каналы Кельтнера",
+          "rationale": "Волатильностный пробой: граница отмеряется в ATR от средней, а не по ценовому экстремуму. Сигнал возникает, когда движение выходит за рамки обычного шума ДАННОГО периода, что автоматически подстраивается под смену волатильности — в отличие от фиксированного окна Дончиана.",
+          "evolution": "filter_vol_regime",
+          "parent": "keltner_breakout",
+          "cost_model": "MT5/CFT: 3.25 bps/сторона (замер по счёту) + 9 bps проскальзывания"
+        }
+      }
+    },
+    {
+      "name": "mt5_conqueror_II_1d",
+      "type": "trend",
+      "score": 97,
+      "barriers": 5,
+      "robustness": 0.8632,
+      "regimes_ok": true,
+      "fresh_ok": true,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 419,
+        "winrate": 0.4964200477326969,
+        "profit_factor": 2.672560659888369,
+        "expectancy_R": 0.11682478015973363,
+        "sharpe_trade": 0.21312616968947742,
+        "total_R": 48.94958288692837,
+        "max_dd_R": 1.5451092962396658,
+        "max_loss_streak": 6,
+        "profit_concentration": {
+          "top_share": 0.2446768645688999,
+          "median_R": -0.0025459173854698843,
+          "max_R": 6.354622497249908,
+          "n": 419,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "mt5_conqueror_II_1d|mom_lookback=80,base_mult=18.0,mom_lookback=20",
+        "entry": {
+          "type": "conqueror",
+          "params": {
+            "sma_period": 10,
+            "slope_lookback": 10,
+            "mom_lookback": 80
+          }
+        },
+        "stop": {
+          "type": "atr",
+          "params": {
+            "period": 40,
+            "mult": 12.0
+          }
+        },
+        "exit": {
+          "type": "conqueror_trail",
+          "params": {
+            "atr_period": 40,
+            "base_mult": 18.0,
+            "narrow_factor": 0.6666666666666666,
+            "sma_period": 10,
+            "slope_lookback": 10,
+            "mom_lookback": 20
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.005,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "mt5",
+          "fee_bps_per_side": 3.25,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Courtney Smith, How to Make a Living Trading Foreign Exchange, гл. 4; первоисточник, НЕ упрощённая .pine-реализация",
+          "external": "Conqueror",
+          "cost_model": "MT5/CFT: 3.25 bps/сторона (замер по счёту) + 9 bps проскальзывания"
+        }
+      }
+    },
+    {
+      "name": "mt5_smith_channel_55_20_1d",
+      "type": "breakout",
+      "score": 100,
+      "barriers": 4,
+      "robustness": 0.786,
+      "regimes_ok": false,
+      "fresh_ok": false,
+      "worthy": false,
+      "metrics": {
+        "n_trades": 229,
+        "winrate": 0.44541484716157204,
+        "profit_factor": 13.396596656005443,
+        "expectancy_R": 3.524882275573573,
+        "sharpe_trade": 0.08512483728785533,
+        "total_R": 807.1980411063483,
+        "max_dd_R": 6.473687992927154,
+        "max_loss_streak": 7,
+        "profit_concentration": {
+          "top_share": 0.8546049799938724,
+          "median_R": -0.09440218380056624,
+          "max_R": 623.3886624078419,
+          "n": 229,
+          "top_n": 5
+        }
+      },
+      "failed": [
+        "1. Out-of-sample",
+        "2. Walk-forward",
+        "5. Поправка на multiple testing"
+      ],
+      "config": {
+        "name": "mt5_smith_channel_55_20_1d|period=60",
+        "entry": {
+          "type": "channel_stop",
+          "params": {
+            "period": 60,
+            "buffer": 0.0002
+          }
+        },
+        "stop": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "exit": {
+          "type": "channel",
+          "params": {
+            "period": 20
+          }
+        },
+        "direction": "both",
+        "timeframe": "1d",
+        "filters": [],
+        "sizing": {
+          "risk_pct": 0.01,
+          "max_leverage": 100.0
+        },
+        "costs": {
+          "model": "mt5",
+          "fee_bps_per_side": 3.25,
+          "slip_bps_per_side": 9.0,
+          "funding_default_8h": 0.0001
+        },
+        "meta": {
+          "source": "Куртни Смит, «Как стабильно зарабатывать на рынке FOREX» (How to Make a Living Trading Foreign Exchange); формализация по тексту первоисточника, не по сторонним скриптам",
+          "external": "Courtney Smith",
+          "cost_model": "MT5/CFT: 3.25 bps/сторона (замер по счёту) + 9 bps проскальзывания"
+        }
+      }
+    }
+  ],
+  "elapsed_min": 0.1
+}

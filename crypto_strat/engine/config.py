@@ -62,6 +62,23 @@ LEGACY_COSTS = {
 # входов новая модель почти ничего не меняет (14.5 bps на сторону против
 # прежних 15.0), поэтому вердикты по трендовым стратегиям остаются как были.
 # Выигрывают только те, кто реально входит покоящимся лимитом.
+# Модель "mt5" — фактически ЗАМЕРЕННЫЙ тариф боевого счёта CFT/MT5.
+# Замер: BTCUSDT.cft, 0.5 BTC @ 63814 (нотионал ~$31 900), round-trip
+# комиссия $20.73 -> 20.73/31900 = 0.0650% round-trip = 3.25 bps на сторону.
+# Исполнение на MT5 рыночное и без разделения maker/taker — ставка плоская.
+#
+# ⚠️ Проскальзывание здесь тем более НЕ снижается. Это торговля через CFD-фид
+# проп-фирмы, а не напрямую в биржевом стакане: спред шире, глубина неизвестна,
+# и если реальность отличается от 9 bps, то скорее в худшую сторону. Ставка —
+# замеренный факт, проскальзывание — по-прежнему оценка неизвестного.
+MIN_MT5_FEE_BPS = 3.25       # 0.0325% на сторону, замер по счёту
+MT5_COSTS = {
+    "model": "mt5",
+    "fee_bps_per_side": 3.25,
+    "slip_bps_per_side": 9.0,
+    "funding_default_8h": 0.0001,
+}
+
 MIN_MAKER_FEE_BPS = 2.0      # 0.02% Bybit maker
 MIN_TAKER_FEE_BPS = 5.5      # 0.055% Bybit taker
 MIN_SLIP_BPS = 9.0           # проскальзывание тейкерного исполнения. НЕ ПОНИЖАТЬ.
@@ -116,19 +133,34 @@ class StrategyConfig:
         self.sizing = {**DEFAULT_SIZING, **self.sizing}
 
         # какая модель издержек: старые конфиги узнаются по своим ключам
-        legacy = ("fee_bps_per_side" in self.costs
-                  or "slip_bps_per_side" in self.costs
-                  or self.costs.get("model") == "flat")
-        base = LEGACY_COSTS if legacy else DEFAULT_COSTS
-        self.costs = {**base, **self.costs}
+        model = self.costs.get("model")
+        if model is None:
+            model = ("flat" if ("fee_bps_per_side" in self.costs
+                                or "slip_bps_per_side" in self.costs)
+                     else "maker_taker")
+        base = {"flat": LEGACY_COSTS, "mt5": MT5_COSTS,
+                "maker_taker": DEFAULT_COSTS}[model]
+        self.costs = {**base, **self.costs, "model": model}
 
-        if self.is_flat():
+        if model == "flat":
             rt = self.round_trip_bps()
             if rt < MIN_ROUND_TRIP_BPS - 1e-9:
                 raise ConfigError(
                     f"round-trip издержки {rt:.1f} bps < минимума "
                     f"{MIN_ROUND_TRIP_BPS} bps. Занижать издержки запрещено "
                     f"(р.4 барьер 7).")
+        elif model == "mt5":
+            # пол по КАЖДОМУ компоненту: замеренная ставка — законное
+            # уточнение, оптимистичное проскальзывание — нет
+            if float(self.costs["fee_bps_per_side"]) < MIN_MT5_FEE_BPS - 1e-9:
+                raise ConfigError(
+                    f"комиссия {self.costs['fee_bps_per_side']} bps/сторона < "
+                    f"замеренной {MIN_MT5_FEE_BPS} bps. Занижать запрещено.")
+            if float(self.costs["slip_bps_per_side"]) < MIN_SLIP_BPS - 1e-9:
+                raise ConfigError(
+                    f"проскальзывание {self.costs['slip_bps_per_side']} bps < "
+                    f"минимума {MIN_SLIP_BPS} bps. На CFD-фиде проп-фирмы оно "
+                    f"скорее выше биржевого, а не ниже.")
         else:
             for key, floor in (("maker_fee_bps", MIN_MAKER_FEE_BPS),
                                ("taker_fee_bps", MIN_TAKER_FEE_BPS),
@@ -143,7 +175,10 @@ class StrategyConfig:
 
     # ------------------------------------------------------------------ #
     def is_flat(self) -> bool:
-        return self.costs.get("model", "flat") == "flat"
+        """Плоская модель: издержка одинакова для любого типа исполнения.
+        Так устроены и легаси-модель (30 bps), и MT5 (24.5 bps) — на MT5
+        исполнение рыночное и разделения maker/taker нет."""
+        return self.costs.get("model", "flat") in ("flat", "mt5")
 
     def entry_cost_rate(self, kind: str) -> float:
         """Доля нотионала, теряемая на ВХОДЕ. Зависит от типа исполнения.

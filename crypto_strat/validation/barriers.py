@@ -25,7 +25,9 @@ import numpy as np
 import pandas as pd
 
 from ..engine.backtest import run_backtest, BacktestResult
-from ..engine.config import StrategyConfig, MIN_ROUND_TRIP_BPS, MIN_MAKER_FEE_BPS, MIN_TAKER_FEE_BPS, MIN_SLIP_BPS
+from ..engine.config import (StrategyConfig, MIN_ROUND_TRIP_BPS,
+                             MIN_MAKER_FEE_BPS, MIN_TAKER_FEE_BPS,
+                             MIN_SLIP_BPS, MIN_MT5_FEE_BPS)
 from ..engine import indicators as ind
 from ..engine.metrics import trade_metrics, full_metrics
 from .hypothesis import Hypothesis, TrialLog
@@ -482,8 +484,17 @@ def barrier_costs(dataset: dict, cfg: StrategyConfig, results: list[BacktestResu
         maker_share = sum(float((r.trades["entry_kind"] == "limit").sum())
                           for r in results if r.n_trades) / n_tr
 
-    if cfg.is_flat():
+    model = cfg.costs.get("model", "flat")
+    if model == "flat":
         cost_ok = rt >= MIN_ROUND_TRIP_BPS
+    elif model == "mt5":
+        # У MT5 свой пол: комиссия ЗАМЕРЕНА по счёту (3.25 bps/сторона), и
+        # требовать от неё легаси-порога 30 bps round-trip было бы не
+        # строгостью, а ошибкой — мы бы заваливали кандидатов за то, что у
+        # трейдера тариф лучше, чем мы предполагали. Пол остаётся там, где
+        # ему место: на КОМПОНЕНТАХ, и прежде всего на проскальзывании.
+        cost_ok = (float(cfg.costs["fee_bps_per_side"]) >= MIN_MT5_FEE_BPS - 1e-9
+                   and float(cfg.costs["slip_bps_per_side"]) >= MIN_SLIP_BPS - 1e-9)
     else:
         # В модели maker/taker единого порога быть не может: у лимитного входа
         # честный round-trip физически ниже, чем у рыночного. Полы стоят на
@@ -535,8 +546,10 @@ def barrier_costs(dataset: dict, cfg: StrategyConfig, results: list[BacktestResu
     if gross:
         cost_share = fees / abs(gross)
 
-    cost_label = (f"round-trip >= {MIN_ROUND_TRIP_BPS} bps" if cfg.is_flat()
-                  else "ставки не ниже реальных (maker 2 / taker 5.5 / слип 9 bps)")
+    cost_label = {
+        "flat": f"round-trip >= {MIN_ROUND_TRIP_BPS} bps",
+        "mt5": "ставки не ниже замеренных (3.25 bps/сторона + слип 9 bps)",
+    }.get(model, "ставки не ниже реальных (maker 2 / taker 5.5 / слип 9 bps)")
     checks = {
         cost_label: cost_ok,
         "стоп не мельче 0.5 ATR": stop_ok,

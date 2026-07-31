@@ -41,7 +41,7 @@ mean-reversion — честнее держать его в самом скепт
 
 from __future__ import annotations
 
-from ..engine.config import StrategyConfig
+from ..engine.config import StrategyConfig, LEGACY_COSTS
 from ..validation.hypothesis import Hypothesis
 from .score import Idea
 
@@ -101,7 +101,7 @@ def _cfg(name, exit_, filters, tf) -> StrategyConfig:
         # стоп ЗА ХВОСТОМ ложного пробоя приходит из самой заявки
         "stop": {"type": "block", "params": {}},
         "exit": exit_, "filters": filters,
-        "sizing": {"risk_pct": 0.01},
+        "sizing": {"risk_pct": 0.01}, "costs": dict(LEGACY_COSTS),
         "meta": {"source": "; ".join(SRC), "caveat": VOLUME_CAVEAT},
     })
 
